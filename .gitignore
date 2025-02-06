@@ -111,4 +111,5 @@ report.md
 # Draw.io backups
 *.drawio.bkp
 *cognition-ai.drawio.bkp*
+.$cognition-core.drawio.dtmp
 *.bkp
