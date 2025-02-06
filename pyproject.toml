@@ -17,4 +17,4 @@ build-backend = "hatchling.build"
 
 # Add this section to explicitly specify which files to include
 [tool.hatch.build.targets.wheel]
-packages = ["src/cognition-core"]
+packages = ["src/cognition_core"]
