@@ -1,6 +1,6 @@
 # Cognition Core
 
-Core infrastructure package for building AI agents with CrewAI, providing configuration management, memory systems, and tool integration.
+Core integration package for building AI agents with CrewAI, providing configuration management, memory systems, and tool integration.
 
 ## Architecture
 ![Cognition AI](./designs/cognition-core.jpg)
