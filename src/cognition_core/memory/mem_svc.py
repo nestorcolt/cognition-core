@@ -1,7 +1,9 @@
 from cognition_core.memory.short_term import CustomShortTermMemory
 from crewai.memory.long_term.long_term_memory import LongTermMemory
 from cognition_core.memory.long_term import CustomLongTermMemory
+from crewai.memory.entity.entity_memory import EntityMemory
 from cognition_core.memory.entity import CustomEntityMemory
+from cognition_core.memory.short_term import ShortTermMemory
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
 
@@ -48,6 +50,14 @@ class MemoryService:
     def __init_default_long_term_memory(self) -> LongTermMemory:
         """Initialize default long term memory configuration"""
         return LongTermMemory()
+
+    def __init_default_short_term_memory(self):
+        """Initialize default short term memory configuration"""
+        return ShortTermMemory(embedder_config=self.get_embedder_config())
+
+    def __init_default_entity_memory(self):
+        """Initialize default entity memory configuration"""
+        return EntityMemory(embedder_config=self.get_embedder_config())
 
     def get_long_term_memory(self):
         """Get long term memory configuration"""
