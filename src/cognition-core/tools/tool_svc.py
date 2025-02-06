@@ -1,8 +1,8 @@
 from crewai.tools.structured_tool import CrewStructuredTool
 from typing import Dict, List, Optional, Any
-from cognition.config import ConfigManager
+from cognition_core.config import ConfigManager
+from cognition_core.logger import logger
 from pydantic import BaseModel, Field
-from cognition.logger import logger
 import asyncio
 import httpx
 import os

@@ -1,8 +1,7 @@
-from cognition.memory.mem_svc import MemoryService
+from cognition_core.memory.mem_svc import MemoryService
+from cognition_core.config import ConfigManager
 from crewai.project import CrewBase
-from cognition.config import ConfigManager
 from pathlib import Path
-
 
 
 @CrewBase
@@ -24,4 +23,3 @@ class CognitionCoreCrewBase:
 
         # LLM GATEWAY CONFIG
         self.portkey_config = self.config_manager.get_portkey_config()
-

@@ -1,5 +1,5 @@
 from crewai.memory.short_term.short_term_memory import ShortTermMemory
-from cognition.memory.storage import ChromaRAGStorage
+from cognition_core.memory.storage import ChromaRAGStorage
 
 
 class CustomShortTermMemory(ShortTermMemory):

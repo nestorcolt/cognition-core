@@ -4,13 +4,11 @@ import os
 import yaml
 import time
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pydantic import BaseModel
-from cognition.config import (
+from cognition_core.config import (
     ConfigManager,
     ConfigValidationError,
-    ConfigSchema,
-    EnvManager,
 )
 
 

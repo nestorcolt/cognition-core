@@ -1,5 +1,5 @@
 from crewai.memory.entity.entity_memory import EntityMemory
-from cognition.memory.storage import ChromaRAGStorage
+from cognition_core.memory.storage import ChromaRAGStorage
 
 
 class CustomEntityMemory(EntityMemory):

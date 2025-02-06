@@ -1,10 +1,10 @@
 from watchdog.events import FileSystemEventHandler
 from crewai.utilities.paths import db_storage_path
 from pydantic import BaseModel, ValidationError
+from cognition_core.logger import logger
 from watchdog.observers import Observer
 from contextlib import contextmanager
 from typing import Dict, Any, Type
-from cognition.logger import logger
 from pathlib import Path
 import threading
 import yaml
