@@ -1,6 +1,6 @@
 [project]
 name = "cognition-core"
-version = "0.1.0"
+dynamic = ["version"] # Make version dynamic
 description = "Core integration package for building AI agents with CrewAI, providing configuration management, memory systems, and tool integration"
 authors = [{ name = "Nestor Colt", email = "nestor.colt@gmail.com" }]
 requires-python = ">=3.10,<3.13"
@@ -38,6 +38,14 @@ Documentation = "https://github.com/nestorcolt/cognition-core#readme"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# Add this section to explicitly specify which files to include
+[tool.setuptools.dynamic]
+version = { attr = "cognition_core.__version__" }
+
+[tool.hatch.version]
+path = "src/cognition_core/__init__.py"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/cognition_core"]
