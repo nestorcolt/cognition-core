@@ -7,6 +7,8 @@ import asyncio
 import httpx
 import os
 
+logger = logger.getChild(__name__)
+
 
 class ToolServiceConfig(BaseModel):
     """Schema for tool service configuration"""

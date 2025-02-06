@@ -5,7 +5,7 @@ from cognition_core.memory.entity import CustomEntityMemory
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
 
-logger = logger.logger.getChild(__name__)
+logger = logger.getChild(__name__)
 
 
 class MemoryService:
