@@ -1,5 +1,5 @@
 [project]
-name = "cognition-cpre"
+name = "cognition-core"
 version = "0.1.0"
 description = "cognition core is a package that wraps crewai into a managable bundle"
 authors = [{ name = "Nestor Colt", email = "nestor.colt@gmail.com" }]
@@ -15,3 +15,6 @@ dependencies = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+# Add this section to explicitly specify which files to include
+[tool.hatch.build.targets.wheel]
+packages = ["src/cognition-core"]
