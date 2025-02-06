@@ -1,0 +1,5 @@
+cache:
+  mode: semantic # Enable semantic caching
+metadata:
+  environment: development
+  project: cognition

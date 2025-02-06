@@ -1,0 +1,4 @@
+description: "Cognition crew configuration"
+environment: "development"
+name: "cognition"
+version: "1.0"

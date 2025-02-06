@@ -1,0 +1,17 @@
+[project]
+name = "cognition-cpre"
+version = "0.1.0"
+description = "cognition core is a package that wraps crewai into a managable bundle"
+authors = [{ name = "Nestor Colt", email = "nestor.colt@gmail.com" }]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "crewai[tools]>=0.100.1,<1.0.0",
+    "langchain-community>=0.0.27",
+    "chromadb>=0.4.0",               # For vector storage
+]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

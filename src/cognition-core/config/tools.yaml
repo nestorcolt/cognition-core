@@ -1,0 +1,45 @@
+version: "1.0"
+environment: "development"
+
+# Tool Service Configuration
+tool_services:
+  - name: "primary_service"
+    enabled: true
+    base_url: "http://localhost:8080/api/v1"
+    endpoints:
+      - path: "/tools"
+        method: "GET"
+        description: "Fetches available tools"
+      - path: "/tools/{tool_id}"
+        method: "GET"
+        description: "Fetches specific tool details"
+    headers:
+      Authorization: "${TOOL_SERVICE_API_KEY}"
+
+  - name: "secondary_service"
+    enabled: false
+    base_url: "http://other-service:9090/api/v1"
+    endpoints:
+      - path: "/available-tools"
+        method: "GET"
+        description: "Fetches available tools"
+
+# Global Tool Settings
+settings:
+  cache:
+    enabled: true
+    ttl: 3600 # Cache TTL in seconds
+    max_size: 1000 # Maximum number of cached results
+
+  retry:
+    max_attempts: 3
+    backoff_factor: 0.5
+
+  validation:
+    schema_validation: true
+    response_timeout: 30
+
+# Default Tool Parameters
+default_parameters:
+  timeout: 10
+  max_tokens: 1000
