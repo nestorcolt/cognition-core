@@ -106,3 +106,9 @@ coverage.xml
 cognition-ai - material/
 uv.lock
 report.md
+*cognition-ai.drawio.bkp*
+
+# Draw.io backups
+*.drawio.bkp
+*cognition-ai.drawio.bkp*
+*.bkp
