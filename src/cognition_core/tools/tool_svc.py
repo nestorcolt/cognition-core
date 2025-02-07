@@ -9,6 +9,7 @@ import httpx
 import os
 
 logger = logger.getChild(__name__)
+os.environ["CONFIG_DIR"] = "../cognition/src/cognition/config"
 
 
 class CognitionToolsHandler(ToolsHandler):
@@ -54,6 +55,7 @@ class ToolService:
         self.tools: Dict[str, CrewStructuredTool] = {}
         self._http_clients: Dict[str, httpx.AsyncClient] = {}
         self._refresh_lock = asyncio.Lock()
+        self._failed_services = []
         self._load_config()
 
     def _load_config(self):
@@ -74,16 +76,26 @@ class ToolService:
         """Initialize HTTP clients for each service"""
         for service in self.tool_services:
             headers = {}
+
             if service.headers:
-                # Process environment variables in headers
-                headers = {
-                    k: (
-                        v.format(**dict(os.environ))
-                        if isinstance(v, str) and v.startswith("${")
-                        else v
-                    )
-                    for k, v in service.headers.items()
-                }
+
+                try:
+                    # Process environment variables in headers
+                    headers = {
+                        k: (
+                            v.format(**dict(os.environ))
+                            if isinstance(v, str) and v.startswith("${")
+                            else v
+                        )
+                        for k, v in service.headers.items()
+                    }
+                except Exception as e:
+                    logger.error(f"Error: {service.name}: {e}")
+
+            if not headers:
+                logger.error(f"Tool load failed for service: {service.name}")
+                self._failed_services.append(service.name)
+                continue
 
             self._http_clients[service.name] = httpx.AsyncClient(
                 base_url=service.base_url,
@@ -96,6 +108,10 @@ class ToolService:
         all_tools = []
 
         for service in self.tool_services:
+            if service.name in self._failed_services:
+                logger.warning(f"Skipping service: {service.name} - failed to load")
+                continue
+
             client = self._http_clients[service.name]
 
             for endpoint in service.endpoints:
