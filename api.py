@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 import uvicorn
+from schemas import ToolsConfig, Tool, ToolParameters, CacheRules
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -10,54 +11,90 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Example tool configuration
+DEFAULT_TOOLS_CONFIG = {
+    "tools": [
+        {
+            "name": "calculator",
+            "description": "Performs mathematical calculations",
+            "endpoint": "/api/tools/calculator",
+            "parameters": {
+                "first_number": ["int", "First number for calculation"],
+                "second_number": ["int", "Second number for calculation"],
+                "operation": ["str", "Mathematical operation to perform"],
+            },
+            "cache_enabled": True,
+            "cache_rules": {"operation": "multiply"},
+        }
+    ]
+}
 
-# Pydantic models for request/response
-class ToolRequest(BaseModel):
-    tool_name: str
-    parameters: Dict
+# Initialize tools configuration
+tools_config = ToolsConfig(**DEFAULT_TOOLS_CONFIG)
 
 
-class AgentConfig(BaseModel):
-    name: str
-    config: Dict
+class CalculatorRequest(BaseModel):
+    first_number: int
+    second_number: int
+    operation: str
 
 
 # Tool endpoints
 @app.get("/tools")
 async def list_tools():
     try:
-        # Implement tool listing logic
-        return {"status": "success", "tools": ["tool1", "tool2"]}
+        return {
+            "status": "success",
+            "tools": [tool.dict() for tool in tools_config.tools],
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/tools/execute")
-async def execute_tool(tool_request: ToolRequest):
+@app.get("/tools/{tool_name}")
+async def get_tool(tool_name: str):
     try:
-        # Implement tool execution logic
-        return {"status": "success", "result": f"Executed {tool_request.tool_name}"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-# Agent endpoints
-@app.get("/agents")
-async def list_agents():
-    try:
-        # Implement agent listing logic
-        return {"status": "success", "agents": ["researcher", "writer"]}
+        tool = next(
+            (tool for tool in tools_config.tools if tool.name == tool_name), None
+        )
+        if not tool:
+            raise HTTPException(status_code=404, detail=f"Tool {tool_name} not found")
+        return {"status": "success", "tool": tool.dict()}
+    except HTTPException as he:
+        raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/agents/configure")
-async def configure_agent(agent_config: AgentConfig):
+@app.post("/api/tools/calculator")
+async def calculator(request: CalculatorRequest):
     try:
-        # Implement agent configuration logic
-        return {"status": "success", "message": f"Agent {agent_config.name} configured"}
+        result = None
+        if request.operation == "multiply":
+            result = request.first_number * request.second_number
+        elif request.operation == "add":
+            result = request.first_number + request.second_number
+        elif request.operation == "subtract":
+            result = request.first_number - request.second_number
+        elif request.operation == "divide":
+            if request.second_number == 0:
+                raise HTTPException(status_code=400, detail="Division by zero")
+            result = request.first_number / request.second_number
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"Unsupported operation: {request.operation}"
+            )
+
+        return {
+            "status": "success",
+            "result": result,
+            "operation": request.operation,
+            "cached": False,  # You can implement caching logic here
+        }
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Health check endpoint
