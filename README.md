@@ -40,9 +40,11 @@ cognition-core/
 - Configurable storage backends
 
 ### Tool Integration
-- Tool registry and service
-- API wrapper utilities
+- Dynamic tool loading from API endpoints
+- In-memory tool registry via ToolService
 - Configuration-driven tool management
+- Automatic parameter validation with Pydantic
+- Configurable caching per tool
 
 ### LLM Integration
 - Portkey routing and monitoring 
@@ -59,13 +61,22 @@ pip install cognition-core
 
 ```python
 from cognition_core import CognitionCoreCrewBase
+from cognition_core.tools import ToolService
 from crewai import Agent, Task, Crew
 
 class YourCrew(CognitionCoreCrewBase):
+    def __init__(self):
+        super().__init__()
+        self.tool_service = ToolService()
+        
+    async def setup(self):
+        await self.tool_service.initialize()  # Loads tools into memory
+        
     @agent
     def researcher(self) -> Agent:
         return Agent(
             config=self.agents_config["researcher"],
+            tools=[self.tool_service.get_tool("calculator")],  # Get specific tool
             llm=self.init_portkey_llm(
                 model="gpt-4",
                 portkey_config=self.portkey_config
@@ -86,7 +97,7 @@ class YourCrew(CognitionCoreCrewBase):
 
 ## Configuration
 
-Example YAML configuration:
+Example YAML configurations:
 
 ```yaml
 # memory.yaml
@@ -102,6 +113,56 @@ long_term_memory:
   connection_string: "${LONG_TERM_DB_CONNECTION_STRING}"
 ```
 
+```yaml
+# tools.yaml
+version: "1.0"
+environment: "development"
+
+# Tool Service Configuration
+tool_services:
+  - name: "primary_service"
+    enabled: true
+    base_url: "http://localhost:8080/api/v1"
+    endpoints:
+      - path: "/tools"
+        method: "GET"
+        description: "Fetches available tools"
+      - path: "/tools/{tool_id}"
+        method: "GET"
+        description: "Fetches specific tool details"
+    headers:
+      Authorization: "${TOOL_SERVICE_API_KEY}"
+
+# Global Tool Settings
+settings:
+  cache:
+    enabled: true
+    ttl: 3600  # Cache TTL in seconds
+    max_size: 1000  # Maximum number of cached results
+
+  validation:
+    schema_validation: true
+    response_timeout: 30
+```
+
+## Tool Service Usage
+
+The ToolService manages dynamic tool loading and access:
+
+```python
+from cognition_core.tools import ToolService
+
+# Initialize service
+tool_service = ToolService()
+await tool_service.initialize()  # Loads tools from configured endpoints
+
+# Access tools
+calculator = tool_service.get_tool("calculator")  # Get specific tool
+available_tools = tool_service.list_tools()  # List all tools
+
+# Tools remain in memory for the lifetime of the ToolService instance
+```
+
 ## Environment Variables
 
 Required variables:
@@ -109,6 +170,7 @@ Required variables:
 - `PORTKEY_VIRTUAL_KEY`: Portkey virtual key
 - `LONG_TERM_DB_PASSWORD`: Long-term storage password
 - `CONFIG_DIR`: Configuration directory path (default: src/cognition-core/config)
+- `TOOL_SERVICE_API_KEY`: API key for tool service authentication
 
 ## Contributing
 
