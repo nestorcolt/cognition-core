@@ -1,4 +1,5 @@
 from crewai.tools.structured_tool import CrewStructuredTool
+from crewai.agents.tools_handler import ToolsHandler
 from typing import Dict, List, Optional, Any
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
@@ -8,6 +9,18 @@ import httpx
 import os
 
 logger = logger.getChild(__name__)
+
+
+class CognitionToolsHandler(ToolsHandler):
+    """Enhanced tools handler that integrates with ToolService"""
+
+    def __init__(self, tool_service: "ToolService", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tool_service = tool_service
+
+    def get_tools(self, tool_names: List[str]) -> List[Any]:
+        """Fetch current tools from service"""
+        return [self.tool_service.get_tool(name) for name in tool_names]
 
 
 class ToolServiceConfig(BaseModel):
