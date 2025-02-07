@@ -45,6 +45,11 @@ cognition-core/
 - Configuration-driven tool management
 - Automatic parameter validation with Pydantic
 - Configurable caching per tool
+- Dynamic tool refresh capability with thread safety
+- Improved error handling for failed services
+- Configurable HTTP client timeouts
+- Environment variable support in tool headers
+- Atomic tool updates with rollback on failure
 
 ### LLM Integration
 - Portkey routing and monitoring 
@@ -56,6 +61,64 @@ cognition-core/
 ```bash
 pip install cognition-core
 ```
+
+## Environment Variables
+
+Required:
+- `CONFIG_DIR`: Configuration directory path (default: src/cognition-core/config)
+- `CONFIG_RELOAD_TIMEOUT`: Timeout for config reload (default: 0.1)
+- `LONG_TERM_DB_PASSWORD`: Password for long-term memory database
+- `CHROMA_PASSWORD`: Password for short-term memory database
+- `PORTKEY_VIRTUAL_KEY`: Portkey virtual key for LLM routing
+- `PORTKEY_API_KEY`: Portkey API key for LLM routing
+- `APP_LOG_LEVEL`: Logging level (default: "INFO")
+
+## Tool Service Usage
+
+The ToolService now supports dynamic tool refreshing:
+
+```python
+from cognition_core.tools import ToolService
+
+# Initialize service
+tool_service = ToolService()
+await tool_service.initialize()
+
+# Get tools
+calculator = tool_service.get_tool("calculator")
+available_tools = tool_service.list_tools()
+
+# Refresh tools at runtime
+await tool_service.refresh_tools()  # Thread-safe refresh
+```
+
+### Tool Configuration
+
+```yaml
+# tools.yaml
+tool_services:
+  - name: "primary_service"
+    enabled: true
+    base_url: "http://localhost:8080/api/v1"
+    endpoints:
+      - path: "/tools"
+        method: "GET"
+    headers:
+      Authorization: "${TOOL_SERVICE_API_KEY}"
+
+settings:
+  cache:
+    enabled: true
+    ttl: 3600
+  validation:
+    response_timeout: 30
+```
+
+### Error Handling
+- Failed services are tracked and skipped in subsequent operations
+- Atomic tool updates prevent partial states
+- Existing tools are preserved on refresh failure
+- Detailed error logging with service context
 
 ## Quick Start
 
@@ -162,15 +225,6 @@ available_tools = tool_service.list_tools()  # List all tools
 
 # Tools remain in memory for the lifetime of the ToolService instance
 ```
-
-## Environment Variables
-
-Required variables:
-- `PORTKEY_API_KEY`: Portkey API key
-- `PORTKEY_VIRTUAL_KEY`: Portkey virtual key
-- `LONG_TERM_DB_PASSWORD`: Long-term storage password
-- `CONFIG_DIR`: Configuration directory path (default: src/cognition-core/config)
-- `TOOL_SERVICE_API_KEY`: API key for tool service authentication
 
 ## Contributing
 
