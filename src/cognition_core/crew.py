@@ -1,8 +1,13 @@
+from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from cognition_core.memory.mem_svc import MemoryService
-from cognition_core.tools.tool_svc import ToolService
 from cognition_core.config import ConfigManager
 from crewai.project import CrewBase
+from crewai.agents import BaseAgent
+from crewai.tools import BaseTool
 from pathlib import Path
+from crewai import Crew
+from crewai import Task
+from typing import List
 
 
 @CrewBase
@@ -39,3 +44,38 @@ class CognitionCoreCrewBase:
     def list_tools(self):
         """List all available tools"""
         return self.tool_service.list_tools()
+
+
+class CognitionCrew(Crew):
+    def __init__(self, tool_service: ToolService, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tool_service = tool_service
+        self.tools_handler = CognitionToolsHandler(tool_service)
+
+    def _prepare_tools(
+        self, agent: BaseAgent, task: Task, tools: List[str]
+    ) -> List[BaseTool]:
+        # First get base tools from parent
+        tools = super()._prepare_tools(agent, task, tools)
+
+        # Then add our dynamic tools
+        if isinstance(tools, list) and all(isinstance(t, str) for t in tools):
+            # If tools are string names, fetch from service
+            tools = self.tools_handler.get_tools(tools)
+
+        return tools
+
+    def _merge_tools(
+        self, existing_tools: List[BaseTool], new_tools: List[BaseTool]
+    ) -> List[BaseTool]:
+        """Override to handle our dynamic tools"""
+        if not new_tools:
+            return existing_tools
+
+        # Convert any string tool names to actual tools
+        new_tools = [
+            self.tool_service.get_tool(tool) if isinstance(tool, str) else tool
+            for tool in new_tools
+        ]
+
+        return super()._merge_tools(existing_tools, new_tools)

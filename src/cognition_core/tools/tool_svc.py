@@ -53,6 +53,7 @@ class ToolService:
         self.config_manager = ConfigManager()
         self.tools: Dict[str, CrewStructuredTool] = {}
         self._http_clients: Dict[str, httpx.AsyncClient] = {}
+        self._refresh_lock = asyncio.Lock()
         self._load_config()
 
     def _load_config(self):
@@ -127,10 +128,26 @@ class ToolService:
 
         return cache_func
 
+    async def refresh_tools(self):
+        """Refresh tools while maintaining existing ones"""
+        async with self._refresh_lock:
+            # Get current tools
+            existing_tools = self.tools.copy()
+
+            try:
+                # Load new tools
+                await self.load_tools()
+                logger.info(f"Successfully refreshed {len(self.tools)} tools")
+            except Exception as e:
+                # Restore existing tools on failure
+                self.tools = existing_tools
+                logger.error(f"Failed to refresh tools: {e}")
+                raise
+
     async def initialize(self):
         """Initialize the tool service"""
         await self._init_clients()
-        await self.load_tools()
+        await self.load_tools()  # Initial load
 
     async def load_tools(self):
         """Fetch and load all tools into memory"""
