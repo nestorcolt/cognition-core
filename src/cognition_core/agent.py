@@ -1,7 +1,7 @@
 from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from crewai.agents.tools_handler import ToolsHandler
-from typing import List, Optional, Any, Dict
-from pydantic import BaseModel, Field
+from typing import List, Optional, Any
+from pydantic import Field
 from crewai import Agent
 
 
