@@ -2,13 +2,12 @@ from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.config import ConfigManager
+from typing import List, Optional, Dict, Any
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
 from crewai.tools import BaseTool
-from typing import List, Optional
+from crewai import Crew, Task
 from pathlib import Path
-from crewai import Crew
-from crewai import Task
 
 
 @CrewBase
@@ -52,6 +51,13 @@ class CognitionCrew(Crew):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    # Core CrewAI fields
+    tasks: List[Task] = Field(default_factory=list)
+    agents: List[BaseAgent] = Field(default_factory=list)
+    process: str = Field(default="sequential")
+    verbose: bool = Field(default=False)
+
+    # Our custom fields
     tool_service: Optional[ToolService] = Field(
         default=None, description="Tool service instance"
     )
@@ -94,3 +100,8 @@ class CognitionCrew(Crew):
         ]
 
         return super()._merge_tools(existing_tools, new_tools)
+
+    async def kickoff(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
+        """Start the crew execution"""
+        # TODO: Implement crew execution logic
+        pass
