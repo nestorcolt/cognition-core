@@ -6,11 +6,8 @@ from cognition_core.logger import logger
 from pydantic import BaseModel, Field
 import asyncio
 import httpx
-import os
 
 logger = logger.getChild(__name__)
-logger.setLevel("DEBUG")
-os.environ["CONFIG_DIR"] = "../cognition/src/cognition/config"
 
 
 class CognitionToolsHandler(ToolsHandler):
@@ -66,11 +63,13 @@ class ToolService:
         try:
             self.config = self.config_manager.get_config("tools")
             self.settings = self.config.get("settings", {})
+
             self.tool_services = [
                 ToolServiceConfig(**service)
                 for service in self.config.get("tool_services", [])
                 if service.get("enabled", False)
             ]
+            logger.debug(f"Tool services: {self.tool_services}")
         except Exception as e:
             logger.error(f"Failed to load tool configuration: {e}")
             raise
@@ -136,20 +135,15 @@ class ToolService:
     async def load_tools(self):
         """Fetch and load all tools into memory"""
         tool_definitions = await self.fetch_tool_definitions()
-        logger.debug(f"Fetched {len(tool_definitions)} tool definitions")
 
         for tool_def in tool_definitions:
-            logger.debug(f"\nProcessing tool: {tool_def.name}")
-            logger.debug(f"Parameters: {tool_def.parameters}")
+            logger.debug(f"Processing tool: {tool_def.name}")
 
             # Create field definitions for parameters
             fields = {}
             for name, param in tool_def.parameters.items():
                 python_type = self._get_python_type(param.type)
                 fields[name] = (python_type, Field(..., description=param.description))
-                logger.debug(
-                    f"Created field {name}: {python_type} - {param.description}"
-                )
 
             # Create the parameter schema class
             param_schema = type(
@@ -160,7 +154,6 @@ class ToolService:
                     **{k: v[1] for k, v in fields.items()},
                 },
             )
-            logger.debug(f"Created parameter schema: {param_schema.__name__}")
 
             # Create the tool
             tool = CrewStructuredTool.from_function(
@@ -169,17 +162,12 @@ class ToolService:
                 args_schema=param_schema,
                 func=self._create_tool_executor(tool_def),
             )
-            logger.debug(f"Created tool: {tool.name}")
 
             self.tools[tool_def.name] = tool
-            logger.debug(f"Registered tool {tool_def.name} in memory")
-
-        logger.debug(f"\nTotal tools loaded: {len(self.tools)}")
-        logger.debug(f"Available tools: {list(self.tools.keys())}")
 
         # Print tool details
         for name, tool in self.tools.items():
-            logger.debug(f"\nTool: {name}")
+            logger.debug(f"Tool: {name}")
             logger.debug(f"Description: {tool.description}")
             logger.debug(f"Parameters: {tool.args_schema.model_json_schema()}")
 
@@ -220,20 +208,5 @@ class ToolService:
 
     def list_tools(self) -> List[str]:
         """List all available tool names"""
+        logger.info(f"Available tools: {list(self.tools.keys())}")
         return list(self.tools.keys())
-
-
-async def main():
-    tool_service = ToolService()
-    await tool_service.initialize()
-
-    try:
-        tools = tool_service.list_tools()
-        logger.info(f"Available tools: {tools}")
-
-    finally:
-        await tool_service.close()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

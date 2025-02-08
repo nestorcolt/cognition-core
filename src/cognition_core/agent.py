@@ -1,6 +1,6 @@
 from cognition_core.tools.tool_svc import ToolService
-from typing import List, Optional
 from pydantic import Field, ConfigDict
+from typing import List, Optional
 from crewai import Agent
 
 

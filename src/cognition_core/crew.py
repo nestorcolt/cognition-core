@@ -3,81 +3,82 @@ from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.config import ConfigManager
 from cognition_core.agent import CognitionAgent
+from typing import List, Optional, Any, TypeVar
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
-from typing import List, Optional, Any
+from crewai.project import CrewBase
 from crewai.tools import BaseTool
 from crewai import Crew, Task
 from pathlib import Path
+import asyncio
 
 
-@CrewBase
-class CognitionCoreCrewBase:
-    """Cognition crew base class with integrated tool service"""
+T = TypeVar("T", bound=type)
 
-    def __init__(self):
-        super().__init__()
-        # Initialize config manager with config directory
-        self.config_manager = ConfigManager()
 
-        # Initialize memory service with config manager
-        self.memory_service = MemoryService(self.config_manager)
+# First, create a base decorator that inherits from CrewBase's WrappedClass
+def CognitionCoreCrewBase(cls: T) -> T:
+    """Enhanced CrewBase decorator with Cognition-specific functionality"""
 
-        # Initialize tool service
-        self.tool_service = ToolService()
+    # Get the wrapped class from CrewBase
+    BaseWrappedClass = CrewBase(cls)
 
-        # Get configs using ConfigManager
-        self.agents_config = str(Path(self.config_manager.config_dir) / "agents.yaml")
-        self.tasks_config = str(Path(self.config_manager.config_dir) / "tasks.yaml")
-        self.crew_config = str(Path(self.config_manager.config_dir) / "crew.yaml")
+    class CognitionWrappedClass(BaseWrappedClass):
+        def __init__(self, *args, **kwargs):
+            # Initialize config manager with config directory
+            self.config_manager = ConfigManager()
 
-        # LLM GATEWAY CONFIG
-        self.portkey_config = self.config_manager.get_portkey_config()
+            # Initialize memory service with config manager
+            self.memory_service = MemoryService(self.config_manager)
 
-    async def setup(self):
-        """Initialize services including tool loading"""
-        await self.tool_service.initialize()
+            # Initialize tool service
+            self.tool_service = ToolService()
 
-    def get_tool(self, name: str):
-        """Get a specific tool by name"""
-        return self.tool_service.get_tool(name)
+            # Get configs using ConfigManager
+            self.agents_config = str(
+                Path(self.config_manager.config_dir) / "agents.yaml"
+            )
+            self.tasks_config = str(Path(self.config_manager.config_dir) / "tasks.yaml")
+            self.crew_config = str(Path(self.config_manager.config_dir) / "crew.yaml")
 
-    def list_tools(self):
-        """List all available tools"""
-        return self.tool_service.list_tools()
+            # LLM GATEWAY CONFIG
+            self.portkey_config = self.config_manager.get_portkey_config()
 
-    def get_cognition_agent(
-        self, config: dict, llm: Any, verbose: bool = True
-    ) -> CognitionAgent:
-        """Create a CognitionAgent with tools from service.
+            # Initialize tool service
+            asyncio.run(self.setup())
 
-        Args:
-            config: Agent configuration
-            llm: Language model instance
-            verbose: Enable verbose output
-        """
-        # Get tools before agent creation
-        available_tools = self.tool_service.list_tools()
-        print(f"Creating agent with tools: {available_tools}")  # Debug print
+            super().__init__(*args, **kwargs)
 
-        # Create tool instances
-        tool_instances = [self.tool_service.get_tool(name) for name in available_tools]
-        print(f"Tool instances: {tool_instances}")  # Debug print
+        async def setup(self):
+            """Initialize services including tool loading"""
+            await self.tool_service.initialize()
 
-        agent = CognitionAgent(
-            config=config,
-            llm=llm,
-            verbose=verbose,
-            tools=tool_instances,  # Pass actual tool instances
-            tool_names=available_tools,  # Pass tool names separately
-            tool_service=self.tool_service,
-        )
+        def get_tool(self, name: str):
+            """Get a specific tool by name"""
+            return self.tool_service.get_tool(name)
 
-        # Verify after creation
-        print(f"Agent created with tools: {agent.tools}")
-        print(f"Agent tool names: {agent.tool_names}")
+        def list_tools(self):
+            """List all available tools"""
+            return self.tool_service.list_tools()
 
-        return agent
+        def get_cognition_agent(
+            self, config: dict, llm: Any, verbose: bool = True
+        ) -> CognitionAgent:
+            """Create a CognitionAgent with tools from service."""
+            available_tools = self.tool_service.list_tools()
+            tool_instances = [
+                self.tool_service.get_tool(name) for name in available_tools
+            ]
+            return CognitionAgent(
+                config=config,
+                llm=llm,
+                verbose=verbose,
+                tools=tool_instances,
+                tool_names=available_tools,
+                tool_service=self.tool_service,
+            )
+
+    return CognitionWrappedClass
 
 
 class CognitionCrew(Crew):
