@@ -30,12 +30,8 @@ class CognitionAgent(Agent):
     step_callback: Optional[Callable] = Field(default=None)
 
     # Our custom fields
-    tool_names: List[str] = Field(
-        default_factory=list, description="Names of tools to use"
-    )
-    tool_service: Optional[ToolService] = Field(
-        default=None, description="Tool service instance"
-    )
+    tool_names: List[str] = Field(default_factory=list)
+    tool_service: Optional[ToolService] = Field(default=None)
     function_calling_llm_internal: bool = Field(default=False)
 
     @property
@@ -48,27 +44,21 @@ class CognitionAgent(Agent):
         """Set function calling LLM flag"""
         self.function_calling_llm_internal = value
 
-    def __init__(
-        self,
-        tool_names: Optional[List[str]] = None,
-        tool_service: Optional[ToolService] = None,
-        **kwargs,
-    ):
-        # Store tool names and service
-        kwargs["tool_names"] = tool_names or []
-        kwargs["tool_service"] = tool_service
+    def __init__(self, *args, **kwargs):
+        # Debug print
+        print(f"Tools passed to init: {kwargs.get('tools')}")
+        print(f"Tool service passed to init: {kwargs.get('tool_service')}")
 
-        # Initialize with empty tools list
-        kwargs["tools"] = []
+        if "tool_service" in kwargs and "tools" in kwargs:
+            tool_service = kwargs["tool_service"]
+            tools = kwargs["tools"]
+            print(f"Available tools from service: {tools}")
 
-        # Create our custom tools handler
-        if tool_service:
-            kwargs["tools_handler"] = CognitionToolsHandler(tool_service)
+            # Explicitly set both tools and tool_names
+            kwargs["tool_names"] = tools
+            kwargs["tools"] = [tool_service.get_tool(name) for name in tools]
 
-        super().__init__(**kwargs)
-
-        # Load initial tools
-        self._refresh_tools()
+        super().__init__(*args, **kwargs)
 
     def _refresh_tools(self):
         """Refresh tools from service"""
