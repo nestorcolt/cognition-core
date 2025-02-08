@@ -31,7 +31,6 @@ class ToolServiceConfig(BaseModel):
     enabled: bool
     base_url: str
     endpoints: List[Dict[str, str]]
-    headers: Optional[Dict[str, str]] = None
 
 
 class ToolDefinition(BaseModel):
@@ -55,7 +54,6 @@ class ToolService:
         self.tools: Dict[str, CrewStructuredTool] = {}
         self._http_clients: Dict[str, httpx.AsyncClient] = {}
         self._refresh_lock = asyncio.Lock()
-        self._failed_services = []
         self._load_config()
 
     def _load_config(self):
@@ -75,31 +73,8 @@ class ToolService:
     async def _init_clients(self):
         """Initialize HTTP clients for each service"""
         for service in self.tool_services:
-            headers = {}
-
-            if service.headers:
-
-                try:
-                    # Process environment variables in headers
-                    headers = {
-                        k: (
-                            v.format(**dict(os.environ))
-                            if isinstance(v, str) and v.startswith("${")
-                            else v
-                        )
-                        for k, v in service.headers.items()
-                    }
-                except Exception as e:
-                    logger.error(f"Error: {service.name}: {e}")
-
-            if not headers:
-                logger.error(f"Tool load failed for service: {service.name}")
-                self._failed_services.append(service.name)
-                continue
-
             self._http_clients[service.name] = httpx.AsyncClient(
                 base_url=service.base_url,
-                headers=headers,
                 timeout=self.settings.get("validation", {}).get("response_timeout", 30),
             )
 
@@ -108,10 +83,6 @@ class ToolService:
         all_tools = []
 
         for service in self.tool_services:
-            if service.name in self._failed_services:
-                logger.warning(f"Skipping service: {service.name} - failed to load")
-                continue
-
             client = self._http_clients[service.name]
 
             for endpoint in service.endpoints:
@@ -147,15 +118,11 @@ class ToolService:
     async def refresh_tools(self):
         """Refresh tools while maintaining existing ones"""
         async with self._refresh_lock:
-            # Get current tools
             existing_tools = self.tools.copy()
-
             try:
-                # Load new tools
                 await self.load_tools()
                 logger.info(f"Successfully refreshed {len(self.tools)} tools")
             except Exception as e:
-                # Restore existing tools on failure
                 self.tools = existing_tools
                 logger.error(f"Failed to refresh tools: {e}")
                 raise
@@ -170,7 +137,6 @@ class ToolService:
         tool_definitions = await self.fetch_tool_definitions()
 
         for tool_def in tool_definitions:
-            # Create parameter schema dynamically
             param_schema = type(
                 f"{tool_def.name}Params",
                 (BaseModel,),
