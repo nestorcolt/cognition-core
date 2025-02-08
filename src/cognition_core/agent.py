@@ -45,14 +45,9 @@ class CognitionAgent(Agent):
         self.function_calling_llm_internal = value
 
     def __init__(self, *args, **kwargs):
-        # Debug print
-        print(f"Tools passed to init: {kwargs.get('tools')}")
-        print(f"Tool service passed to init: {kwargs.get('tool_service')}")
-
         if "tool_service" in kwargs and "tools" in kwargs:
             tool_service = kwargs["tool_service"]
             tools = kwargs["tools"]
-            print(f"Available tools from service: {tools}")
 
             # Explicitly set both tools and tool_names
             kwargs["tool_names"] = tools

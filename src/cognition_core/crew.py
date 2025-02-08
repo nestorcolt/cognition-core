@@ -2,9 +2,10 @@ from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.config import ConfigManager
+from cognition_core.agent import CognitionAgent
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
-from typing import List, Optional
+from typing import List, Optional, Any
 from crewai.tools import BaseTool
 from crewai import Crew, Task
 from pathlib import Path
@@ -44,6 +45,39 @@ class CognitionCoreCrewBase:
     def list_tools(self):
         """List all available tools"""
         return self.tool_service.list_tools()
+
+    def get_cognition_agent(
+        self, config: dict, llm: Any, verbose: bool = True
+    ) -> CognitionAgent:
+        """Create a CognitionAgent with tools from service.
+
+        Args:
+            config: Agent configuration
+            llm: Language model instance
+            verbose: Enable verbose output
+        """
+        # Get tools before agent creation
+        available_tools = self.tool_service.list_tools()
+        print(f"Creating agent with tools: {available_tools}")  # Debug print
+
+        # Create tool instances
+        tool_instances = [self.tool_service.get_tool(name) for name in available_tools]
+        print(f"Tool instances: {tool_instances}")  # Debug print
+
+        agent = CognitionAgent(
+            config=config,
+            llm=llm,
+            verbose=verbose,
+            tools=tool_instances,  # Pass actual tool instances
+            tool_names=available_tools,  # Pass tool names separately
+            tool_service=self.tool_service,
+        )
+
+        # Verify after creation
+        print(f"Agent created with tools: {agent.tools}")
+        print(f"Agent tool names: {agent.tool_names}")
+
+        return agent
 
 
 class CognitionCrew(Crew):
