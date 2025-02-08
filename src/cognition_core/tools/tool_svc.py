@@ -9,6 +9,7 @@ import httpx
 import os
 
 logger = logger.getChild(__name__)
+logger.setLevel("DEBUG")
 os.environ["CONFIG_DIR"] = "../cognition/src/cognition/config"
 
 
@@ -133,18 +134,18 @@ class ToolService:
     async def load_tools(self):
         """Fetch and load all tools into memory"""
         tool_definitions = await self.fetch_tool_definitions()
-        logger.info(f"Fetched {len(tool_definitions)} tool definitions")
+        logger.debug(f"Fetched {len(tool_definitions)} tool definitions")
 
         for tool_def in tool_definitions:
-            logger.info(f"\nProcessing tool: {tool_def.name}")
-            logger.info(f"Parameters: {tool_def.parameters}")
+            logger.debug(f"\nProcessing tool: {tool_def.name}")
+            logger.debug(f"Parameters: {tool_def.parameters}")
 
             # Create field definitions for parameters
             fields = {}
             for name, param in tool_def.parameters.items():
                 python_type = self._get_python_type(param.type)
                 fields[name] = (python_type, Field(..., description=param.description))
-                logger.info(
+                logger.debug(
                     f"Created field {name}: {python_type} - {param.description}"
                 )
 
@@ -157,7 +158,7 @@ class ToolService:
                     **{k: v[1] for k, v in fields.items()},
                 },
             )
-            logger.info(f"Created parameter schema: {param_schema.__name__}")
+            logger.debug(f"Created parameter schema: {param_schema.__name__}")
 
             # Create the tool
             tool = CrewStructuredTool.from_function(
@@ -166,19 +167,19 @@ class ToolService:
                 args_schema=param_schema,
                 func=self._create_tool_executor(tool_def),
             )
-            logger.info(f"Created tool: {tool.name}")
+            logger.debug(f"Created tool: {tool.name}")
 
             self.tools[tool_def.name] = tool
-            logger.info(f"Registered tool {tool_def.name} in memory")
+            logger.debug(f"Registered tool {tool_def.name} in memory")
 
-        logger.info(f"\nTotal tools loaded: {len(self.tools)}")
-        logger.info(f"Available tools: {list(self.tools.keys())}")
+        logger.debug(f"\nTotal tools loaded: {len(self.tools)}")
+        logger.debug(f"Available tools: {list(self.tools.keys())}")
 
         # Print tool details
         for name, tool in self.tools.items():
-            logger.info(f"\nTool: {name}")
-            logger.info(f"Description: {tool.description}")
-            logger.info(f"Parameters: {tool.args_schema.model_json_schema()}")
+            logger.debug(f"\nTool: {name}")
+            logger.debug(f"Description: {tool.description}")
+            logger.debug(f"Parameters: {tool.args_schema.model_json_schema()}")
 
     def _create_tool_executor(self, tool_def: ToolDefinition):
         """Creates an executor function for the tool"""
@@ -195,7 +196,7 @@ class ToolService:
             existing_tools = self.tools.copy()
             try:
                 await self.load_tools()
-                logger.info(f"Successfully refreshed {len(self.tools)} tools")
+                logger.debug(f"Successfully refreshed {len(self.tools)} tools")
             except Exception as e:
                 self.tools = existing_tools
                 logger.error(f"Failed to refresh tools: {e}")
@@ -226,7 +227,7 @@ async def main():
 
     try:
         tools = tool_service.list_tools()
-        print(f"Available tools: {tools}")
+        logger.info(f"Available tools: {tools}")
 
     finally:
         await tool_service.close()
