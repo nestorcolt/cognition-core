@@ -1,6 +1,6 @@
 from crewai.tools.structured_tool import CrewStructuredTool
 from crewai.agents.tools_handler import ToolsHandler
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Type
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
 from pydantic import BaseModel, Field
@@ -24,13 +24,11 @@ class CognitionToolsHandler(ToolsHandler):
         return [self.tool_service.get_tool(name) for name in tool_names]
 
 
-class ToolServiceConfig(BaseModel):
-    """Schema for tool service configuration"""
+class ParameterDefinition(BaseModel):
+    """Schema for parameter definition"""
 
-    name: str
-    enabled: bool
-    base_url: str
-    endpoints: List[Dict[str, str]]
+    type: str = Field(..., description="Parameter type")
+    description: str = Field(..., description="Parameter description")
 
 
 class ToolDefinition(BaseModel):
@@ -39,13 +37,19 @@ class ToolDefinition(BaseModel):
     name: str = Field(..., description="Name of the tool")
     description: str = Field(..., description="Tool description")
     endpoint: str = Field(..., description="API endpoint for the tool")
-    parameters: Dict[str, Any] = Field(
+    parameters: Dict[str, ParameterDefinition] = Field(
         default_factory=dict, description="Parameter definitions"
     )
     cache_enabled: bool = Field(default=False, description="Whether caching is enabled")
-    cache_rules: Optional[Dict[str, Any]] = Field(
-        default=None, description="Custom caching rules"
-    )
+
+
+class ToolServiceConfig(BaseModel):
+    """Schema for tool service configuration"""
+
+    name: str
+    enabled: bool
+    base_url: str
+    endpoints: List[Dict[str, str]]
 
 
 class ToolService:
@@ -78,42 +82,93 @@ class ToolService:
                 timeout=self.settings.get("validation", {}).get("response_timeout", 30),
             )
 
+    def _get_python_type(self, type_str: str) -> Type:
+        """Convert string type to Python type"""
+        type_mapping = {
+            "str": str,
+            "int": int,
+            "float": float,
+            "bool": bool,
+            "list": list,
+            "dict": dict,
+        }
+        return type_mapping.get(type_str.lower(), str)
+
     async def fetch_tool_definitions(self) -> List[ToolDefinition]:
         """Fetch tool definitions from all configured services"""
         all_tools = []
 
         for service in self.tool_services:
             client = self._http_clients[service.name]
+            logger.debug(f"Fetching tools from {service.name} at {service.base_url}")
 
             for endpoint in service.endpoints:
                 if endpoint["method"] == "GET" and "/tools" in endpoint["path"]:
                     try:
                         response = await client.get(endpoint["path"])
                         response.raise_for_status()
-                        tools = response.json()
-                        all_tools.extend([ToolDefinition(**tool) for tool in tools])
+
+                        response_data = response.json()
+                        tools_data = response_data.get("tools", [])
+
+                        for tool_data in tools_data:
+                            try:
+                                tool = ToolDefinition(**tool_data)
+                                all_tools.append(tool)
+                            except Exception as e:
+                                logger.error(
+                                    f"Failed to parse tool data: {tool_data}. Error: {e}"
+                                )
+                                continue
+
                     except Exception as e:
-                        logger.error(f"Error fetching tools from {service.name}: {e}")
+                        logger.error(
+                            f"Error fetching tools from {service.name}: {str(e)}"
+                        )
+                        logger.debug("Full error details:", exc_info=True)
                         continue
 
         return all_tools
 
-    def _create_cache_function(self, tool_def: ToolDefinition):
-        """Creates a cache function based on tool definition and global settings"""
-        if not self.settings["cache"]["enabled"] or not tool_def.cache_enabled:
-            return None
+    async def load_tools(self):
+        """Fetch and load all tools into memory"""
+        tool_definitions = await self.fetch_tool_definitions()
 
-        def cache_func(args: Dict[str, Any], result: Any) -> bool:
-            if not tool_def.cache_rules:
-                return True
+        for tool_def in tool_definitions:
+            # Create field definitions for parameters
+            fields = {}
+            for name, param in tool_def.parameters.items():
+                python_type = self._get_python_type(param.type)
+                fields[name] = (python_type, Field(..., description=param.description))
 
-            # Apply custom cache rules
-            for rule_key, rule_value in tool_def.cache_rules.items():
-                if rule_key in args and args[rule_key] != rule_value:
-                    return False
-            return True
+            # Create the parameter schema class
+            param_schema = type(
+                f"{tool_def.name}Params",
+                (BaseModel,),
+                {
+                    "__annotations__": {k: v[0] for k, v in fields.items()},
+                    **{k: v[1] for k, v in fields.items()},
+                },
+            )
 
-        return cache_func
+            # Create the tool
+            tool = CrewStructuredTool.from_function(
+                name=tool_def.name,
+                description=tool_def.description,
+                args_schema=param_schema,
+                func=self._create_tool_executor(tool_def),
+            )
+
+            self.tools[tool_def.name] = tool
+
+    def _create_tool_executor(self, tool_def: ToolDefinition):
+        """Creates an executor function for the tool"""
+
+        async def execute(**kwargs):
+            # Tool execution logic here
+            return f"Executed {tool_def.name} with {kwargs}"
+
+        return execute
 
     async def refresh_tools(self):
         """Refresh tools while maintaining existing ones"""
@@ -130,36 +185,7 @@ class ToolService:
     async def initialize(self):
         """Initialize the tool service"""
         await self._init_clients()
-        await self.load_tools()  # Initial load
-
-    async def load_tools(self):
-        """Fetch and load all tools into memory"""
-        tool_definitions = await self.fetch_tool_definitions()
-
-        for tool_def in tool_definitions:
-            param_schema = type(
-                f"{tool_def.name}Params",
-                (BaseModel,),
-                {
-                    field_name: (field_type, Field(..., description=field_desc))
-                    for field_name, (
-                        field_type,
-                        field_desc,
-                    ) in tool_def.parameters.items()
-                },
-            )
-
-            tool = CrewStructuredTool.from_function(
-                name=tool_def.name,
-                description=tool_def.description,
-                args_schema=param_schema,
-                func=self._create_tool_executor(tool_def),
-            )
-
-            if self.settings["cache"]["enabled"] and tool_def.cache_enabled:
-                tool.cache_function = self._create_cache_function(tool_def)
-
-            self.tools[tool_def.name] = tool
+        await self.load_tools()
 
     async def close(self):
         """Cleanup resources"""
@@ -176,20 +202,12 @@ class ToolService:
 
 
 async def main():
-    # Initialize tool service
     tool_service = ToolService()
     await tool_service.initialize()
 
     try:
-        # Get available tools
         tools = tool_service.list_tools()
         print(f"Available tools: {tools}")
-
-        # Get a specific tool
-        calculator = tool_service.get_tool("calculator")
-        if calculator:
-            result = await calculator.run(first_number=5, second_number=3)
-            print(f"Calculation result: {result}")
 
     finally:
         await tool_service.close()

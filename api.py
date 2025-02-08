@@ -1,36 +1,12 @@
 from fastapi import FastAPI, HTTPException
-from typing import Dict, List, Optional
 from pydantic import BaseModel
 import uvicorn
-from schemas import ToolsConfig, Tool, ToolParameters, CacheRules
 
-# Initialize FastAPI app
 app = FastAPI(
     title="Cognition Core API",
-    description="API for managing AI agents and tool integration",
+    description="Tool Discovery API",
     version="1.0.0",
 )
-
-# Example tool configuration
-DEFAULT_TOOLS_CONFIG = {
-    "tools": [
-        {
-            "name": "calculator",
-            "description": "Performs mathematical calculations",
-            "endpoint": "/api/tools/calculator",
-            "parameters": {
-                "first_number": ["int", "First number for calculation"],
-                "second_number": ["int", "Second number for calculation"],
-                "operation": ["str", "Mathematical operation to perform"],
-            },
-            "cache_enabled": True,
-            "cache_rules": {"operation": "multiply"},
-        }
-    ]
-}
-
-# Initialize tools configuration
-tools_config = ToolsConfig(**DEFAULT_TOOLS_CONFIG)
 
 
 class CalculatorRequest(BaseModel):
@@ -39,34 +15,40 @@ class CalculatorRequest(BaseModel):
     operation: str
 
 
-# Tool endpoints
+# Tool definitions that match our ToolDefinition schema
+AVAILABLE_TOOLS = {
+    "tools": [
+        {
+            "name": "calculator",
+            "description": "Basic calculator for arithmetic operations",
+            "endpoint": "/tools/calculator",
+            "parameters": {
+                "first_number": {
+                    "type": "int",
+                    "description": "First number for calculation",
+                },
+                "second_number": {
+                    "type": "int",
+                    "description": "Second number for calculation",
+                },
+                "operation": {
+                    "type": "str",
+                    "description": "Operation to perform (multiply, add, subtract, divide)",
+                },
+            },
+            "cache_enabled": True,
+        }
+    ]
+}
+
+
 @app.get("/tools")
 async def list_tools():
-    try:
-        return {
-            "status": "success",
-            "tools": [tool.dict() for tool in tools_config.tools],
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    """Return list of available tools"""
+    return AVAILABLE_TOOLS
 
 
-@app.get("/tools/{tool_name}")
-async def get_tool(tool_name: str):
-    try:
-        tool = next(
-            (tool for tool in tools_config.tools if tool.name == tool_name), None
-        )
-        if not tool:
-            raise HTTPException(status_code=404, detail=f"Tool {tool_name} not found")
-        return {"status": "success", "tool": tool.dict()}
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/api/tools/calculator")
+@app.post("/tools/calculator")
 async def calculator(request: CalculatorRequest):
     try:
         result = None
@@ -89,7 +71,7 @@ async def calculator(request: CalculatorRequest):
             "status": "success",
             "result": result,
             "operation": request.operation,
-            "cached": False,  # You can implement caching logic here
+            "cached": False,
         }
     except HTTPException as he:
         raise he
@@ -97,7 +79,6 @@ async def calculator(request: CalculatorRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# Health check endpoint
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
