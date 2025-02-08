@@ -107,19 +107,6 @@ class CognitionCrew(Crew):
         )
         super().__init__(*args, **kwargs)
 
-    def _prepare_tools(
-        self, agent: BaseAgent, task: Task, tools: List[str]
-    ) -> List[BaseTool]:
-        # First get base tools from parent
-        tools = super()._prepare_tools(agent, task, tools)
-
-        # Then add our dynamic tools
-        if isinstance(tools, list) and all(isinstance(t, str) for t in tools):
-            # If tools are string names, fetch from service
-            tools = self.tools_handler.get_tools(tools) if self.tools_handler else []
-
-        return tools
-
     def _merge_tools(
         self, existing_tools: List[BaseTool], new_tools: List[BaseTool]
     ) -> List[BaseTool]:
@@ -128,9 +115,10 @@ class CognitionCrew(Crew):
             return existing_tools
 
         # Convert any string tool names to actual tools
-        new_tools = [
-            self.tool_service.get_tool(tool) if isinstance(tool, str) else tool
-            for tool in new_tools
-        ]
+        if self.tool_service:
+            new_tools = [
+                self.tool_service.get_tool(tool) if isinstance(tool, str) else tool
+                for tool in new_tools
+            ]
 
         return super()._merge_tools(existing_tools, new_tools)

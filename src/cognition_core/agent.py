@@ -45,15 +45,12 @@ class CognitionAgent(Agent):
         self.function_calling_llm_internal = value
 
     def __init__(self, *args, **kwargs):
-        if "tool_service" in kwargs and "tools" in kwargs:
-            tool_service = kwargs["tool_service"]
-            tools = kwargs["tools"]
-
-            # Explicitly set both tools and tool_names
-            kwargs["tool_names"] = tools
-            kwargs["tools"] = [tool_service.get_tool(name) for name in tools]
-
+        # Tools and tool_names should already be properly set by get_cognition_agent
         super().__init__(*args, **kwargs)
+
+        # Store references for later use
+        self.tool_names = kwargs.get("tool_names", [])
+        self.tool_service = kwargs.get("tool_service")
 
     def _refresh_tools(self):
         """Refresh tools from service"""
