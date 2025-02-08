@@ -1,9 +1,9 @@
-from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
-from crewai.agents.agent_builder.base_agent import BaseAgent
 from crewai.agents.tools_handler import ToolsHandler
 from crewai.utilities.converter import Converter
-from typing import List, Optional, Any
+from cognition_core.tools.tool_svc import ToolService
+from typing import List, Optional, Any, Callable
 from pydantic import Field, ConfigDict
+from crewai import Agent
 
 
 class CognitionToolsHandler(ToolsHandler):
@@ -18,11 +18,15 @@ class CognitionToolsHandler(ToolsHandler):
         return [self.tool_service.get_tool(name) for name in tool_names]
 
 
-class CognitionAgent(BaseAgent):
+class CognitionAgent(Agent):
     """Enhanced Agent with integrated tool service support"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+    # Required CrewAI fields
+    step_callback: Optional[Callable] = Field(default=None)
+
+    # Our custom fields
     tool_names: List[str] = Field(
         default_factory=list, description="Names of tools to use"
     )

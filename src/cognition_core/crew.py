@@ -2,9 +2,9 @@ from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.config import ConfigManager
-from typing import List, Optional, Dict, Any
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
+from typing import List, Optional
 from crewai.tools import BaseTool
 from crewai import Crew, Task
 from pathlib import Path
@@ -100,8 +100,3 @@ class CognitionCrew(Crew):
         ]
 
         return super()._merge_tools(existing_tools, new_tools)
-
-    async def kickoff(self, inputs: Optional[Dict[str, Any]] = None) -> Any:
-        """Start the crew execution"""
-        # TODO: Implement crew execution logic
-        pass

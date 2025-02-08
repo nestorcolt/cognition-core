@@ -126,7 +126,9 @@ class ToolService:
                         logger.error(
                             f"Error fetching tools from {service.name}: {str(e)}"
                         )
-                        logger.debug("Full error details:", exc_info=True)
+                        logger.debug(
+                            "Full error details:", exc_info=False
+                        )  # todo: change to True
                         continue
 
         return all_tools
