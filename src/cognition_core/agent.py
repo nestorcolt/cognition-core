@@ -1,8 +1,11 @@
 from crewai.agents.tools_handler import ToolsHandler
-from crewai.utilities.converter import Converter
 from cognition_core.tools.tool_svc import ToolService
+from crewai.agents.tools_handler import ToolsHandler
 from typing import List, Optional, Any, Callable
+from crewai.utilities.converter import Converter
 from pydantic import Field, ConfigDict
+from crewai.tools import BaseTool
+from crewai.task import Task
 from crewai import Agent
 
 
@@ -80,10 +83,27 @@ class CognitionAgent(Agent):
             return self.tools_handler.get_tools(self.tool_names)
         return tools
 
-    def create_agent_executor(self):
-        """Create the agent executor with current tools"""
-        self.tools = self._parse_tools(self.tools)
-        return super().create_agent_executor()
+    def create_agent_executor(
+        self, tools: Optional[List[BaseTool]] = None, task: Optional[Task] = None
+    ) -> None:
+        """Create an agent executor with tool service integration.
+
+        Args:
+            tools: Optional list of tools to use
+            task: Optional task being executed
+        """
+        # Initialize tools list
+        all_tools = list(tools or [])
+
+        # Add tools from service if available
+        if self.tool_service and self.tool_names:
+            service_tools = [
+                self.tool_service.get_tool(name) for name in self.tool_names
+            ]
+            all_tools.extend(service_tools)
+
+        # Call parent implementation with combined tools
+        super().create_agent_executor(tools=all_tools, task=task)
 
     def get_delegation_tools(self) -> List[Any]:
         """Get tools available for delegation"""
