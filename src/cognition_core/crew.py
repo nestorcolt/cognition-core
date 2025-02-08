@@ -1,13 +1,14 @@
 from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
+from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.config import ConfigManager
+from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
-from crewai.agents import BaseAgent
 from crewai.tools import BaseTool
+from typing import List, Optional
 from pathlib import Path
 from crewai import Crew
 from crewai import Task
-from typing import List
 
 
 @CrewBase
@@ -47,10 +48,24 @@ class CognitionCoreCrewBase:
 
 
 class CognitionCrew(Crew):
-    def __init__(self, tool_service: ToolService, *args, **kwargs):
+    """Enhanced Crew with integrated tool service"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    tool_service: Optional[ToolService] = Field(
+        default=None, description="Tool service instance"
+    )
+    tools_handler: Optional[CognitionToolsHandler] = Field(
+        default=None, description="Tools handler instance"
+    )
+
+    def __init__(self, tool_service: Optional[ToolService] = None, *args, **kwargs):
+        # Pass both tool_service and tools_handler through kwargs
+        kwargs["tool_service"] = tool_service
+        kwargs["tools_handler"] = (
+            CognitionToolsHandler(tool_service) if tool_service else None
+        )
         super().__init__(*args, **kwargs)
-        self.tool_service = tool_service
-        self.tools_handler = CognitionToolsHandler(tool_service)
 
     def _prepare_tools(
         self, agent: BaseAgent, task: Task, tools: List[str]
@@ -61,7 +76,7 @@ class CognitionCrew(Crew):
         # Then add our dynamic tools
         if isinstance(tools, list) and all(isinstance(t, str) for t in tools):
             # If tools are string names, fetch from service
-            tools = self.tools_handler.get_tools(tools)
+            tools = self.tools_handler.get_tools(tools) if self.tools_handler else []
 
         return tools
 
