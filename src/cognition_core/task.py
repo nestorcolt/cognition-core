@@ -1,35 +1,26 @@
+from cognition_core.base import CognitionComponent
 from cognition_core.tools.tool_svc import ToolService
 from pydantic import Field, ConfigDict
 from typing import List, Optional
 from crewai import Task
 
 
-class CognitionTask(Task):
-    """Enhanced Task with tool service integration"""
+class CognitionTask(Task, CognitionComponent):
+    """Enhanced Task with component management support"""
 
-    # Add model config to allow arbitrary types
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    tool_names: List[str] = Field(
-        default_factory=list, description="Names of tools to use from tool service"
-    )
-    tool_service: Optional[ToolService] = Field(
-        default=None, description="Tool service instance"
-    )
+    # Tool integration fields
+    tool_names: List[str] = Field(default_factory=list)
+    tool_service: Optional[ToolService] = Field(default=None)
 
-    def __init__(
-        self,
-        tool_names: Optional[List[str]] = None,
-        tool_service: Optional[ToolService] = None,
-        **kwargs,
-    ):
-        # Pass tool-related fields through kwargs for proper Pydantic initialization
-        kwargs["tool_names"] = tool_names or []
-        kwargs["tool_service"] = tool_service
-        kwargs["tools"] = []  # Initialize with empty tools list
+    def __init__(self, name: str, enabled: bool = True, *args, **kwargs):
+        # Initialize CognitionComponent fields
+        kwargs["name"] = name
+        kwargs["enabled"] = enabled
 
-        # Initialize parent class first
-        super().__init__(**kwargs)
+        # Initialize both parent classes
+        super().__init__(*args, **kwargs)
 
         # Load initial tools if service provided
         if self.tool_service:
@@ -47,4 +38,10 @@ class CognitionTask(Task):
         """Create task from configuration"""
         # Extract tool names from config
         tool_names = config.pop("tools", [])
-        return cls(tool_names=tool_names, tool_service=tool_service, **config)
+        return cls(
+            name=config.pop("name"),
+            enabled=config.pop("enabled"),
+            tool_names=tool_names,
+            tool_service=tool_service,
+            **config,
+        )
