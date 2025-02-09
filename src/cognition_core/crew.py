@@ -9,6 +9,7 @@ from crewai.project import CrewBase
 from crewai.project import CrewBase
 from crewai.tools import BaseTool
 from crewai import Crew, Task
+from fastapi import FastAPI
 from pathlib import Path
 import asyncio
 
@@ -44,6 +45,9 @@ def CognitionCoreCrewBase(cls: T) -> T:
             # Initialize tool service
             asyncio.run(self.setup())
 
+            # Initialize API capability
+            self._api = None
+
             # Call parent init after setting up our configs
             super().__init__(*args, **kwargs)
 
@@ -75,6 +79,15 @@ def CognitionCoreCrewBase(cls: T) -> T:
                 tool_names=available_tools,
                 tool_service=self.tool_service,
             )
+
+        @property
+        def api(self) -> FastAPI:
+            """Get FastAPI application for this crew"""
+            if self._api is None:
+                from cognition_core.api import create_crew_api
+
+                self._api = create_crew_api(self.crew())
+            return self._api
 
     return CognitionWrappedClass
 
