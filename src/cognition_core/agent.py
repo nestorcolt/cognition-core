@@ -1,11 +1,12 @@
+from cognition_core.base import CognitionComponent
 from cognition_core.tools.tool_svc import ToolService
 from pydantic import Field, ConfigDict
 from typing import List, Optional
 from crewai import Agent
 
 
-class CognitionAgent(Agent):
-    """Enhanced Agent with integrated tool service support"""
+class CognitionAgent(Agent, CognitionComponent):
+    """Enhanced Agent with component management support"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -13,12 +14,10 @@ class CognitionAgent(Agent):
     tool_names: List[str] = Field(default_factory=list)
     tool_service: Optional[ToolService] = Field(default=None)
 
-    def __init__(self, *args, **kwargs):
-        # If we have tool service and tool names, get the tools
-        tool_service = kwargs.get("tool_service")
-        tool_names = kwargs.get("tool_names", [])
+    def __init__(self, name: str, enabled: bool = True, *args, **kwargs):
+        # Initialize CognitionComponent fields
+        kwargs["name"] = name
+        kwargs["enabled"] = enabled
 
-        if tool_service and tool_names:
-            kwargs["tools"] = [tool_service.get_tool(name) for name in tool_names]
-
+        # Initialize both parent classes
         super().__init__(*args, **kwargs)
