@@ -20,33 +20,30 @@ T = TypeVar("T", bound=type)
 def CognitionCoreCrewBase(cls: T) -> T:
     """Enhanced CrewBase decorator with Cognition-specific functionality"""
 
+    # Create a temporary config directory and paths
+    config_manager = ConfigManager()
+
+    # Set the class-level attributes before CrewBase decoration
+    cls.agents_config = str(Path(config_manager.config_dir) / "agents.yaml")
+    cls.tasks_config = str(Path(config_manager.config_dir) / "tasks.yaml")
+
     # Get the wrapped class from CrewBase
     BaseWrappedClass = CrewBase(cls)
 
     class CognitionWrappedClass(BaseWrappedClass):
         def __init__(self, *args, **kwargs):
-            # Initialize config manager with config directory
+            # Initialize config manager
             self.config_manager = ConfigManager()
 
-            # Initialize memory service with config manager
+            # Initialize other services
             self.memory_service = MemoryService(self.config_manager)
-
-            # Initialize tool service
             self.tool_service = ToolService()
-
-            # Get configs using ConfigManager
-            self.agents_config = str(
-                Path(self.config_manager.config_dir) / "agents.yaml"
-            )
-            self.tasks_config = str(Path(self.config_manager.config_dir) / "tasks.yaml")
-            self.crew_config = str(Path(self.config_manager.config_dir) / "crew.yaml")
-
-            # LLM GATEWAY CONFIG
             self.portkey_config = self.config_manager.get_portkey_config()
 
             # Initialize tool service
             asyncio.run(self.setup())
 
+            # Call parent init after setting up our configs
             super().__init__(*args, **kwargs)
 
         async def setup(self):
