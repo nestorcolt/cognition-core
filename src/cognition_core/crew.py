@@ -1,6 +1,7 @@
 from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
+from cognition_core.base import CognitionComponent
 from cognition_core.config import ConfigManager
 from cognition_core.agent import CognitionAgent
 from typing import List, Optional, Any, TypeVar
@@ -82,8 +83,8 @@ def CognitionCoreCrewBase(cls: T) -> T:
     return CognitionWrappedClass
 
 
-class CognitionCrew(Crew):
-    """Enhanced Crew with integrated tool service"""
+class CognitionCrew(Crew, CognitionComponent):
+    """Enhanced Crew with component management and tool service support"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -94,19 +95,28 @@ class CognitionCrew(Crew):
     verbose: bool = Field(default=False)
 
     # Our custom fields
-    tool_service: Optional[ToolService] = Field(
-        default=None, description="Tool service instance"
-    )
-    tools_handler: Optional[CognitionToolsHandler] = Field(
-        default=None, description="Tools handler instance"
-    )
+    tool_service: Optional[ToolService] = Field(default=None)
+    tools_handler: Optional[CognitionToolsHandler] = Field(default=None)
 
-    def __init__(self, tool_service: Optional[ToolService] = None, *args, **kwargs):
-        # Pass both tool_service and tools_handler through kwargs
+    def __init__(
+        self,
+        name: str = "default_crew",
+        enabled: bool = True,
+        tool_service: Optional[ToolService] = None,
+        *args,
+        **kwargs,
+    ):
+        # Initialize CognitionComponent fields
+        kwargs["name"] = name
+        kwargs["enabled"] = enabled
+
+        # Set up tool service and handler
         kwargs["tool_service"] = tool_service
         kwargs["tools_handler"] = (
             CognitionToolsHandler(tool_service) if tool_service else None
         )
+
+        # Initialize both parent classes
         super().__init__(*args, **kwargs)
 
     def _merge_tools(
@@ -116,7 +126,6 @@ class CognitionCrew(Crew):
         if not new_tools:
             return existing_tools
 
-        # Convert any string tool names to actual tools
         if self.tool_service:
             new_tools = [
                 self.tool_service.get_tool(tool) if isinstance(tool, str) else tool
