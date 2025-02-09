@@ -23,9 +23,10 @@ def CognitionCoreCrewBase(cls: T) -> T:
     # Create a temporary config directory and paths
     config_manager = ConfigManager()
 
-    # Set the class-level attributes before CrewBase decoration
-    cls.agents_config = str(Path(config_manager.config_dir) / "agents.yaml")
-    cls.tasks_config = str(Path(config_manager.config_dir) / "tasks.yaml")
+    # Only override paths if we have a config directory
+    if config_manager.config_dir:
+        cls.agents_config = str(Path(config_manager.config_dir) / "agents.yaml")
+        cls.tasks_config = str(Path(config_manager.config_dir) / "tasks.yaml")
 
     # Get the wrapped class from CrewBase
     BaseWrappedClass = CrewBase(cls)

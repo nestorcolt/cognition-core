@@ -23,23 +23,29 @@ class ConfigSchema(BaseModel):
 
 class ConfigManager:
     def __init__(self):
-        self.reload_timeout = float(
-            os.environ.get("CONFIG_RELOAD_TIMEOUT", "0.1")
-        )  # Reduced timeout
-        self.last_reload = {}  # Track last reload time per file
-        # Convert string path to Path object
-        config_dir = os.environ.get("COGNITION_CONFIG_DIR") or "src/cognition/config"
+        self.reload_timeout = float(os.environ.get("CONFIG_RELOAD_TIMEOUT", "0.1"))
+        self.last_reload = {}
+
+        # Make config_dir optional
+        config_dir = os.environ.get("COGNITION_CONFIG_DIR")
         storage_dir = db_storage_path()
 
-        self.config_dir = Path(config_dir).resolve()
+        if config_dir:
+            self.config_dir = Path(config_dir).resolve()
+            if not self.config_dir.exists():
+                logger.warning(f"Config directory not found: {self.config_dir}")
+                self.config_dir = None
+        else:
+            logger.warning("COGNITION_CONFIG_DIR not set, will use CrewAI defaults")
+            self.config_dir = None
+
         self.storage_dir = Path(storage_dir).resolve()
 
-        if not self.config_dir.exists():
-            raise FileNotFoundError(f"Config directory not found: {self.config_dir}")
-
         self._cache = {}
-        self._setup_hot_reload()
-        self._load_configs()
+        # Only setup hot reload if we have a config directory
+        if self.config_dir:
+            self._setup_hot_reload()
+            self._load_configs()
 
     def get_db_password(self) -> str:
         password = os.getenv("LONG_TERM_DB_PASSWORD")
