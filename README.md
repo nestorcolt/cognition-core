@@ -65,7 +65,7 @@ pip install cognition-core
 ## Environment Variables
 
 Required:
-- `CONFIG_DIR`: Configuration directory path (default: src/cognition-core/config)
+- `COGNITION_CONFIG_DIR`: Configuration directory path (default: src/cognition-core/config)
 - `CONFIG_RELOAD_TIMEOUT`: Timeout for config reload (default: 0.1)
 - `LONG_TERM_DB_PASSWORD`: Password for long-term memory database
 - `CHROMA_PASSWORD`: Password for short-term memory database

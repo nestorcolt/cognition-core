@@ -28,7 +28,7 @@ class ConfigManager:
         )  # Reduced timeout
         self.last_reload = {}  # Track last reload time per file
         # Convert string path to Path object
-        config_dir = os.environ.get("CONFIG_DIR") or "src/cognition/config"
+        config_dir = os.environ.get("COGNITION_CONFIG_DIR") or "src/cognition/config"
         storage_dir = db_storage_path()
 
         self.config_dir = Path(config_dir).resolve()
