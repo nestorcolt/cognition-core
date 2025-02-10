@@ -58,9 +58,7 @@ def CognitionCoreCrewBase(cls: T) -> T:
             """List all available tools"""
             return self.tool_service.list_tools()
 
-        def get_cognition_agent(
-            self, config: dict, llm: Any, verbose: bool = True
-        ) -> CognitionAgent:
+        def get_cognition_agent(self, config: dict, **kwargs) -> CognitionAgent:
             """Create a CognitionAgent with tools from service."""
             available_tools = self.tool_service.list_tools()
             tool_instances = [
@@ -73,11 +71,10 @@ def CognitionCoreCrewBase(cls: T) -> T:
             return CognitionAgent(
                 name=agent_name,  # Pass name from config
                 config=config,
-                llm=llm,
-                verbose=verbose,
                 tools=tool_instances,
                 tool_names=available_tools,
                 tool_service=self.tool_service,
+                **kwargs,
             )
 
     return CognitionWrappedClass

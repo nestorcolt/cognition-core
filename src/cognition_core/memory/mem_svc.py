@@ -18,15 +18,12 @@ class MemoryService:
     def __init__(self, config_manager: ConfigManager):
         self.config_manager = config_manager
         self.memory_config = {}
-        self.embedder = (
-            {
-                "provider": "ollama",
-                "config": {
-                    "model": "nomic-embed-text",
-                    "vector_dimension": 384,
-                },
+        self.embedder = {
+            "provider": "openai",
+            "config": {
+                "model": "text-embedding-3-small",
             },
-        )
+        }
 
         self._initialize_config()
 
@@ -42,9 +39,16 @@ class MemoryService:
         logger.debug(f"Memory Storage Path: {self.storage_path}")
 
         if self.memory_config is None:
+            self.warn("No memory configuration found")
             return
 
+        if not self.memory_config.get("embedder"):
+            msg = "No embedder configuration found --  Assign Ollama embedder config"
+            logger.error(msg)
+            raise ValueError(msg)
+
         self.embedder = self.memory_config.get("embedder", self.embedder)
+
         logger.debug(f"Embedder: {self.embedder}")
 
     def __init_default_long_term_memory(self) -> LongTermMemory:
@@ -158,5 +162,5 @@ class MemoryService:
 
     def get_embedder_config(self):
         """Get embedder configuration"""
-        embedder_settings = self.memory_config.get("embedder", {})
+        embedder_settings = self.memory_config.get("embedder", self.embedder)
         return embedder_settings
