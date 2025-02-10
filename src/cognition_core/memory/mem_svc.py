@@ -6,8 +6,10 @@ from cognition_core.memory.entity import CustomEntityMemory
 from cognition_core.memory.short_term import ShortTermMemory
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
+import logging
 
 logger = logger.getChild(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class MemoryService:
@@ -74,6 +76,10 @@ class MemoryService:
         is_active = settings.get("enabled", False)
         is_external = settings.get("external", False)
 
+        if not is_active:
+            logger.debug("Long term memory configuration deactivated")
+            return
+
         if is_active and is_external:
             # upstream connection string
             connection_string = settings.get("connection_string", None)
@@ -109,6 +115,10 @@ class MemoryService:
         is_active = settings.get("enabled", False)
         is_external = settings.get("external", False)
 
+        if not is_active:
+            logger.debug("Short term memory configuration deactivated")
+            return
+
         if is_active and is_external:
             host = settings.get("host")
             port = settings.get("port")
@@ -139,6 +149,10 @@ class MemoryService:
 
         is_active = settings.get("enabled", False)
         is_external = settings.get("external", False)
+
+        if not is_active:
+            logger.debug("Entity memory configuration deactivated")
+            return
 
         if is_active and is_external:
             host = settings.get("host")
