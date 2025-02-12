@@ -6,7 +6,9 @@ from watchdog.observers import Observer
 from contextlib import contextmanager
 from typing import Dict, Any, Type
 from pathlib import Path
+import subprocess
 import threading
+import shutil
 import yaml
 import time
 import os
@@ -25,27 +27,77 @@ class ConfigManager:
     def __init__(self):
         self.reload_timeout = float(os.environ.get("CONFIG_RELOAD_TIMEOUT", "0.1"))
         self.last_reload = {}
+        self.storage_dir = Path(db_storage_path()).resolve()
+        self._cache = {}
 
-        # Make config_dir optional
+        # Clone remote repo if specified
+        remote_config = os.environ.get("COGNITION_CONFIG_SOURCE")
+        if remote_config:
+            clone_result = self._setup_remote_config(remote_config)
+            if not clone_result:
+                logger.error("Failed to clone remote config")
+
+        # Set config directory (either local or within cloned repo)
         config_dir = os.environ.get("COGNITION_CONFIG_DIR")
-        storage_dir = db_storage_path()
-
         if config_dir:
             self.config_dir = Path(config_dir).resolve()
             if not self.config_dir.exists():
                 logger.warning(f"Config directory not found: {self.config_dir}")
                 self.config_dir = None
         else:
-            logger.warning("COGNITION_CONFIG_DIR not set, will use CrewAI defaults")
+            logger.warning("No config directory set, will use CrewAI defaults")
             self.config_dir = None
 
-        self.storage_dir = Path(storage_dir).resolve()
-
-        self._cache = {}
-        # Only setup hot reload if we have a config directory
+        # Setup hot reload if we have a config directory
         if self.config_dir:
             self._setup_hot_reload()
             self._load_configs()
+
+    def _setup_remote_config(self, remote_url: str) -> Path:
+        """Clone remote config repository"""
+        try:
+            home_dir = Path.home()
+            config_dir = home_dir / ".cognition"
+
+            logger.info(f"Cloning config from {remote_url} to {config_dir}")
+
+            if config_dir.exists():
+                logger.info(f"Removing existing config directory: {config_dir}")
+                shutil.rmtree(config_dir)
+
+            result = subprocess.run(
+                ["git", "clone", remote_url, str(config_dir)],
+                capture_output=True,
+                text=True,
+            )
+
+            if result.returncode != 0:
+                logger.error(f"Git clone failed: {result.stderr}")
+                raise Exception(f"Git clone failed: {result.stderr}")
+
+            logger.info(f"Successfully cloned config to {config_dir}")
+            return config_dir
+
+        except Exception as e:
+            logger.error(f"Failed to setup remote config: {e}")
+            return None
+
+    def _refresh_remote_config(self):
+        """Update remote config as part of hot reload"""
+        if not self.config_dir or "cognition_config" not in str(self.config_dir):
+            return
+
+        try:
+            logger.info("Refreshing remote config")
+            result = subprocess.run(
+                ["git", "pull"], cwd=self.config_dir, capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                self._load_configs()  # Reload after pull
+            else:
+                logger.error(f"Failed to pull remote config: {result.stderr}")
+        except Exception as e:
+            logger.error(f"Error refreshing remote config: {e}")
 
     def get_db_password(self) -> str:
         password = os.getenv("LONG_TERM_DB_PASSWORD")
@@ -222,3 +274,10 @@ class ConfigReloader(FileSystemEventHandler):
                 self.config_manager._load_file(path)
             except Exception as e:
                 logger.error(f"Error reloading config: {str(e)}")
+
+
+# Create the singleton instance
+config_manager = ConfigManager()
+
+# Export only the singleton instance
+__all__ = ["config_manager"]
