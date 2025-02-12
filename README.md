@@ -68,13 +68,21 @@ cognition-core/
 Required:
 - `PORTKEY_API_KEY`: API key for Portkey LLM routing
 - `PORTKEY_VIRTUAL_KEY`: Virtual key for Portkey
+- `COGNITION_CONFIG_DIR`: Path to your configuration directory (e.g., "/home/user/.cognition/cognition-config-demo/config")
 
 Optional:
-- `COGNITION_CONFIG_DIR`: Configuration directory path
+- `COGNITION_CONFIG_SOURCE`: Git repository URL to clone configuration (e.g., "git@github.com:user/config-repo.git")
+  - If set, will clone the repository to ~/.cognition
+  - `COGNITION_CONFIG_DIR` should then point to the config directory within the cloned repo
 - `CONFIG_RELOAD_TIMEOUT`: Config reload timeout (default: 0.1)
 - `LONG_TERM_DB_PASSWORD`: PostgreSQL database password
 - `CHROMA_PASSWORD`: ChromaDB password
 - `APP_LOG_LEVEL`: Logging level (default: INFO)
+
+Note: When using remote configuration:
+1. The repository will be cloned to ~/.cognition
+2. Set `COGNITION_CONFIG_DIR` to point to the config directory within the cloned repository
+3. Configuration is managed through a singleton pattern to prevent multiple clones/reloads
 
 ## Usage Example
 
