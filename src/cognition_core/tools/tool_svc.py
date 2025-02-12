@@ -1,7 +1,7 @@
 from crewai.tools.structured_tool import CrewStructuredTool
 from crewai.agents.tools_handler import ToolsHandler
 from typing import Dict, List, Optional, Any, Type
-from cognition_core.config import ConfigManager
+from cognition_core.config import config_manager
 from cognition_core.logger import logger
 from pydantic import BaseModel, Field
 import asyncio
@@ -52,7 +52,7 @@ class ToolServiceConfig(BaseModel):
 
 class ToolService:
     def __init__(self):
-        self.config_manager = ConfigManager()
+        self.config_manager = config_manager
         self.tools: Dict[str, CrewStructuredTool] = {}
         self._http_clients: Dict[str, httpx.AsyncClient] = {}
         self._refresh_lock = asyncio.Lock()

@@ -1,10 +1,10 @@
 from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
+from cognition_core.config import config_manager as ConfigManager
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
 from cognition_core.base import CognitionComponent
-from cognition_core.config import ConfigManager
 from cognition_core.agent import CognitionAgent
-from typing import List, Optional, Any, TypeVar
+from typing import List, Optional , TypeVar
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
 from crewai.project import CrewBase
@@ -22,7 +22,7 @@ def CognitionCoreCrewBase(cls: T) -> T:
     """Enhanced CrewBase decorator with Cognition-specific functionality"""
 
     # Initialize config before class wrapping
-    config_manager = ConfigManager()
+    config_manager = ConfigManager
 
     # Set config paths before CrewBase wrapping
     if config_manager.config_dir:
@@ -35,10 +35,9 @@ def CognitionCoreCrewBase(cls: T) -> T:
     class CognitionWrappedClass(BaseWrappedClass):
         def __init__(self, *args, **kwargs):
             # Initialize services
-            self.config_manager = ConfigManager()
-            self.memory_service = MemoryService(self.config_manager)
+            self.memory_service = MemoryService(config_manager)
             self.tool_service = ToolService()
-            self.portkey_config = self.config_manager.get_portkey_config()
+            self.portkey_config = config_manager.get_portkey_config()
 
             # Initialize tool service
             asyncio.run(self.setup())

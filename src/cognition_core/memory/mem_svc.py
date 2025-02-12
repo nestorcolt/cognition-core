@@ -41,7 +41,7 @@ class MemoryService:
         logger.debug(f"Memory Storage Path: {self.storage_path}")
 
         if self.memory_config is None:
-            self.warn("No memory configuration found")
+            logger.warning("No memory configuration found")
             return
 
         if not self.memory_config.get("embedder"):
