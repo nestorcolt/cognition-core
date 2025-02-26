@@ -1,12 +1,13 @@
-from crewai.flow.flow import Flow
+from crewai.flow.flow import Flow, listen, start, router
 from cognition_core.base import CognitionComponent
 from cognition_core.config import config_manager
 from pydantic import Field, ConfigDict
-from typing import TypeVar, Generic, Optional
+from typing import Optional, TypeVar, Generic, Any, Dict
 from uuid import UUID
 
 T = TypeVar('T')
 
+# Create a metaclass that resolves the conflict
 class CognitionFlowMeta(type(Flow), type(CognitionComponent)):
     """Metaclass to resolve the conflict between Flow and CognitionComponent"""
     pass
@@ -28,21 +29,18 @@ class CognitionFlow(Flow[T], CognitionComponent, Generic[T], metaclass=Cognition
         *args,
         **kwargs
     ):
+        # Load flow config
+        self._config_data = config_manager.load_config(config_path) if config_path else {}
+        
         # Initialize component fields
         kwargs["name"] = name
         kwargs["enabled"] = enabled
         
-        # Initialize both parent classes
-        Flow.__init__(self, *args, **kwargs)
-        CognitionComponent.__init__(self, name=name, enabled=enabled)
+        # Initialize parent classes
+        super().__init__(*args, **kwargs)
         
-        # Setup flow-specific attributes
-        self._setup_flow()
-
-    def _setup_flow(self):
-        """Initialize flow-specific settings"""
-        # Load flow config
-        self.config = config_manager.load_config(self.config_path) if self.config_path else {}
+        # Store config path
+        self.config_path = config_path
         
         # Setup any additional services needed
         self._setup_services()
@@ -51,6 +49,10 @@ class CognitionFlow(Flow[T], CognitionComponent, Generic[T], metaclass=Cognition
         """Initialize any required services for the flow"""
         # Add service initialization as needed
         pass
+        
+    def get_config(self, key: str, default: Any = None) -> Any:
+        """Get configuration value by key"""
+        return self._config_data.get(key, default)
 
     @classmethod
     def from_config(cls, config_path: str) -> "CognitionFlow":

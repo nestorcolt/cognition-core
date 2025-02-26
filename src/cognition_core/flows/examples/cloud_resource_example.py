@@ -1,21 +1,29 @@
-from cognition_core.flow import CognitionFlow, start, listen, router
-from pydantic import BaseModel
-from typing import Dict, List
+from crewai.flow.flow import start, listen, router
+from cognition_core.flow import CognitionFlow
+from pydantic import BaseModel, Field
+from typing import Dict, List, Optional, Any
 
 class ResourceRequest(BaseModel):
     service_type: str  # e.g., "ec2", "rds"
-    specifications: Dict
+    specifications: Dict[str, Any]
     environment: str  # e.g., "dev", "prod"
     requester: str
 
 class CloudResourceState(BaseModel):
-    request: ResourceRequest
-    risk_assessment: Dict = {}
-    approvals: List[str] = []
+    request: Optional[ResourceRequest] = None
+    risk_assessment: Dict[str, Any] = Field(default_factory=dict)
+    approvals: List[str] = Field(default_factory=list)
     provision_status: str = "pending"
     
 class EnterpriseCloudFlow(CognitionFlow[CloudResourceState]):
     """Enterprise-grade cloud resource provisioning flow"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            state_type=CloudResourceState,
+            *args, 
+            **kwargs
+        )
     
     @start()
     def assess_request(self):

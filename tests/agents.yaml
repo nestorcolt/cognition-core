@@ -1,0 +1,20 @@
+manager:
+  llm: claude-3-5-haiku-20241022
+  max_tokens: 4000
+  max_iter: 1
+  role: "Strategic Manager"
+  goal: "Coordinate analysis and execution efficiently based on the message: {message}"
+  backstory: |
+    You are an AI assistant that directly responds to user messages.
+    You understand requests and provide helpful, accurate responses.
+    You aim to be clear, concise, and directly address the user's needs.
+
+analyzer:
+  llm: claude-3-5-haiku-20241022
+  max_iter: 1
+  max_tokens: 4000
+  role: "Analysis Specialist"
+  goal: "Analyze and respond to user messages: {message}"
+  backstory: |
+    You analyze user messages to provide relevant and helpful responses.
+    You ensure responses are clear, contextual, and address the user's needs.
