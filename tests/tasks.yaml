@@ -1,0 +1,4 @@
+analysis_task:
+  description: "Analyze and respond to the user message: {message}. Provide a clear, helpful response that directly addresses their needs."
+  expected_output: "A clear, helpful response to the user's message"
+  agent: analyzer
