@@ -1,4 +1,4 @@
-from cognition.flow import CognitionFlow, start, listen, router
+from cognition_core.flow import CognitionFlow, start, listen, router
 from pydantic import BaseModel
 from typing import Dict, List
 
