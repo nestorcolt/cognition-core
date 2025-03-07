@@ -32,6 +32,7 @@ class ConfigManager:
 
         # Clone remote repo if specified
         remote_config = os.environ.get("COGNITION_CONFIG_SOURCE")
+
         if remote_config:
             clone_result = self._setup_remote_config(remote_config)
             if not clone_result:
@@ -39,20 +40,29 @@ class ConfigManager:
 
         # Set config directory (either local or within cloned repo)
         config_dir = os.environ.get("COGNITION_CONFIG_DIR")
+
         if config_dir:
-            self.config_dir = Path(config_dir).resolve()
+            # Expand tilde to handle home directory paths
+            self.config_dir = Path(os.path.expanduser(config_dir))
+
             if not self.config_dir.exists():
                 logger.warning(f"Config directory not found: {self.config_dir}")
                 self.config_dir = None
         else:
             logger.warning("No config directory set, will use CrewAI defaults")
             self.config_dir = None
-
+        
         # Setup hot reload if we have a config directory
         if self.config_dir:
             self._setup_hot_reload()
             self._load_configs()
 
+    def _load_configs(self):
+        """Load all YAML configs from config directory"""
+        for config_file in self.config_dir.glob("*.yaml"):
+            logger.debug(f"Loading config file: {config_file}")
+            self._load_file(config_file)
+            
     def _setup_remote_config(self, remote_url: str) -> Path:
         """Clone remote config repository"""
         try:
@@ -122,11 +132,6 @@ class ConfigManager:
             self.observer.stop()
             self.observer.join()
 
-    def _load_configs(self):
-        """Load all YAML configs from config directory"""
-        for config_file in self.config_dir.glob("*.yaml"):
-            self._load_file(config_file)
-
     def _load_file(self, file_path: Path) -> Dict[str, Any]:
         """Load and parse a single config file with debouncing"""
         current_time = time.time()
@@ -155,10 +160,13 @@ class ConfigManager:
                 self._cache[file_path.stem] = config
                 self.last_reload[file_path] = current_time
                 return config
+            
         except (yaml.YAMLError, OSError) as e:
             logger.error(f"Error loading config {file_path}: {str(e)}")
+
             if file_path.stem in self._cache:
                 return self._cache[file_path.stem]  # Return last valid config
+            
             raise ConfigValidationError(
                 f"Config loading error in {file_path}: {str(e)}"
             )
@@ -177,15 +185,18 @@ class ConfigManager:
         for attempt in range(max_retries):
             try:
                 config = self._cache.get(name)
+
                 if config is None:
                     raise KeyError(f"Configuration '{name}' not found")
 
                 if validate:
                     config = EnvManager.override_config(config)
                 return config
+            
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise
+
                 time.sleep(retry_delay)
                 continue
 
