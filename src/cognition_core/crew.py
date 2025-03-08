@@ -60,9 +60,15 @@ def CognitionCoreCrewBase(cls: T) -> T:
         def get_cognition_agent(self, config: dict, **kwargs) -> CognitionAgent:
             """Create a CognitionAgent with tools from service."""
             available_tools = self.tool_service.list_tools()
+            
             tool_instances = [
                 self.tool_service.get_tool(name) for name in available_tools
             ]
+            
+            if kwargs.get("tools"):
+                incoming_tools = kwargs.get("tools")
+                kwargs.pop("tools")
+                tool_instances.extend(incoming_tools)
 
             # Extract name from config or use a default
             agent_name = config.get("name", config.get("role", "default_agent"))
