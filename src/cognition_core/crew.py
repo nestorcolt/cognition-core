@@ -69,11 +69,8 @@ def CognitionCoreCrewBase(cls: T) -> T:
                 kwargs.pop("tools")
                 tool_instances.extend(incoming_tools)
 
-            # Extract name from config or use a default
-            agent_name = config.get("name", config.get("role", "default_agent"))
-
             return CognitionAgent(
-                name=agent_name,
+                config=config,
                 tools=tool_instances,
                 tool_names=available_tools,
                 tool_service=self.tool_service,

@@ -1,9 +1,10 @@
 from cognition_core.tools.tool_svc import ToolService
 from cognition_core.llm import init_portkey_llm
+from cognition_core.logger import logger
 from pydantic import Field, ConfigDict
 from typing import List, Optional
-from logger import logger
 from crewai import Agent
+import logging
 
 
 class CognitionAgent(Agent):
@@ -14,22 +15,28 @@ class CognitionAgent(Agent):
     tool_names: List[str] = Field(default_factory=list)
     tool_service: Optional[ToolService] = Field(default=None)
 
-    def __init__(self, name: str, *args, **kwargs) -> None:
-        # Get the parsed config
-        agent_config = kwargs[name]
+    def __init__(self, config: dict, *args, **kwargs) -> None:
+
+        if logger.isEnabledFor(logging.INFO):
+            import json
+
+            logger.info(
+                f"Config:\n{json.dumps(config, indent=2)}\n-----------------------------------"
+            )
 
         # The portkey config is optional
-        portkey_config = agent_config.get("portkey_on", None)
+        portkey_config = config.get("portkey_on", False)
 
         # If the portkey config is not None or empty, we initialize the llm with the portkey config
-        if portkey_config is not None or portkey_config != {}:
+        if portkey_config is True:
             logger.info(
                 f"Initializing the llm with the portkey config: {portkey_config}"
             )
-            agent_config["llm"] = init_portkey_llm(
-                model=agent_config["llm"],
+            config["llm"] = init_portkey_llm(
+                model=config["llm"],
                 portkey_config=portkey_config,
             )
-            agent_config.pop("portkey_on")
+            config.pop("portkey_on")
+            config.pop("llm")
 
-        super().__init__(config=agent_config, *args, **kwargs)
+        super().__init__(config=config, *args, **kwargs)
