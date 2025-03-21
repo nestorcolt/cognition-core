@@ -51,7 +51,7 @@ class ConfigManager:
         else:
             logger.warning("No config directory set, will use CrewAI defaults")
             self.config_dir = None
-        
+
         # Setup hot reload if we have a config directory
         if self.config_dir:
             self._setup_hot_reload()
@@ -62,7 +62,7 @@ class ConfigManager:
         for config_file in self.config_dir.glob("*.yaml"):
             logger.debug(f"Loading config file: {config_file}")
             self._load_file(config_file)
-            
+
     def _setup_remote_config(self, remote_url: str) -> Path:
         """Clone remote config repository"""
         try:
@@ -160,13 +160,13 @@ class ConfigManager:
                 self._cache[file_path.stem] = config
                 self.last_reload[file_path] = current_time
                 return config
-            
+
         except (yaml.YAMLError, OSError) as e:
             logger.error(f"Error loading config {file_path}: {str(e)}")
 
             if file_path.stem in self._cache:
                 return self._cache[file_path.stem]  # Return last valid config
-            
+
             raise ConfigValidationError(
                 f"Config loading error in {file_path}: {str(e)}"
             )
@@ -192,7 +192,7 @@ class ConfigManager:
                 if validate:
                     config = EnvManager.override_config(config)
                 return config
-            
+
             except Exception as e:
                 if attempt == max_retries - 1:
                     raise

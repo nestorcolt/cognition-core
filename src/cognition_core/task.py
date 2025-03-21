@@ -1,13 +1,10 @@
-from cognition_core.base import CognitionComponent
 from cognition_core.tools.tool_svc import ToolService
 from pydantic import Field, ConfigDict
 from typing import List, Optional
 from crewai import Task
 
 
-class CognitionTask(Task, CognitionComponent):
-    """Enhanced Task with component management support"""
-
+class CognitionTask(Task):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # Tool integration fields
@@ -15,10 +12,6 @@ class CognitionTask(Task, CognitionComponent):
     tool_service: Optional[ToolService] = Field(default=None)
 
     def __init__(self, name: str, enabled: bool = True, *args, **kwargs):
-        # Initialize CognitionComponent fields
-        kwargs["name"] = name
-        kwargs["enabled"] = enabled
-
         # Initialize both parent classes
         super().__init__(*args, **kwargs)
 

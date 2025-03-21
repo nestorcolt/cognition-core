@@ -76,13 +76,6 @@ graph LR
     E --> F[Persistence]
 ```
 
-### Common Components
-- State management using Pydantic models
-- Event-driven execution flow
-- Configurable notification systems
-- Metrics and monitoring
-- Audit logging
-
 ## Usage
 
 1. Configure flow settings in `config/flows/`

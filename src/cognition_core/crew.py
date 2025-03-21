@@ -2,9 +2,8 @@ from cognition_core.tools.tool_svc import ToolService, CognitionToolsHandler
 from cognition_core.config import config_manager as ConfigManager
 from crewai.agents.agent_builder.base_agent import BaseAgent
 from cognition_core.memory.mem_svc import MemoryService
-from cognition_core.base import CognitionComponent
 from cognition_core.agent import CognitionAgent
-from typing import List, Optional , TypeVar
+from typing import List, Optional, TypeVar
 from pydantic import Field, ConfigDict
 from crewai.project import CrewBase
 from crewai.project import CrewBase
@@ -60,11 +59,11 @@ def CognitionCoreCrewBase(cls: T) -> T:
         def get_cognition_agent(self, config: dict, **kwargs) -> CognitionAgent:
             """Create a CognitionAgent with tools from service."""
             available_tools = self.tool_service.list_tools()
-            
+
             tool_instances = [
                 self.tool_service.get_tool(name) for name in available_tools
             ]
-            
+
             if kwargs.get("tools"):
                 incoming_tools = kwargs.get("tools")
                 kwargs.pop("tools")
@@ -85,8 +84,7 @@ def CognitionCoreCrewBase(cls: T) -> T:
     return CognitionWrappedClass
 
 
-class CognitionCrew(Crew, CognitionComponent):
-    """Enhanced Crew with component management and tool service support"""
+class CognitionCrew(Crew):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -108,10 +106,6 @@ class CognitionCrew(Crew, CognitionComponent):
         *args,
         **kwargs,
     ):
-        # Initialize CognitionComponent fields
-        kwargs["name"] = name
-        kwargs["enabled"] = enabled
-
         # Set up tool service and handler
         kwargs["tool_service"] = tool_service
         kwargs["tools_handler"] = (

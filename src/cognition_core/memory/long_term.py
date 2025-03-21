@@ -1,5 +1,5 @@
-from crewai.memory.long_term.long_term_memory import LongTermMemory
 from crewai.memory.long_term.long_term_memory_item import LongTermMemoryItem
+from crewai.memory.long_term.long_term_memory import LongTermMemory
 from psycopg2.extras import DictCursor
 from crewai.utilities import Printer
 from datetime import datetime as dt

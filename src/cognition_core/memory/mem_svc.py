@@ -1,9 +1,9 @@
 from cognition_core.memory.short_term import CustomShortTermMemory
 from crewai.memory.long_term.long_term_memory import LongTermMemory
 from cognition_core.memory.long_term import CustomLongTermMemory
+from cognition_core.memory.short_term import ShortTermMemory
 from crewai.memory.entity.entity_memory import EntityMemory
 from cognition_core.memory.entity import CustomEntityMemory
-from cognition_core.memory.short_term import ShortTermMemory
 from cognition_core.config import ConfigManager
 from cognition_core.logger import logger
 import logging
@@ -14,7 +14,7 @@ logger.setLevel(logging.DEBUG)
 
 class MemoryService:
     """
-    Memory Service that provides CrewAI memory configuration with all memory components
+    Memory Service that provides CrewAI memory configuration with all memory comps
     """
 
     def __init__(self, config_manager: ConfigManager):
