@@ -34,7 +34,6 @@ class CognitionAgent(Agent):
             )
             config["llm"] = init_portkey_llm(
                 model=config["llm"],
-                portkey_config=portkey_config,
             )
             config.pop("portkey_on")
             config.pop("llm")
