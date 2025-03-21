@@ -5,9 +5,6 @@ from pydantic import Field, ConfigDict
 from typing import List, Optional
 from crewai import Agent
 import logging
-import litellm
-
-# litellm._turn_on_debug()
 
 
 class CognitionAgent(Agent):
@@ -30,14 +27,15 @@ class CognitionAgent(Agent):
         # The portkey config is optional
         portkey_on = config.pop("portkey_on", False)
         portkey_config = config.pop("portkey_config", {})
-        llm = config.pop("llm")
+        trace_id = config.pop("trace_id", "cognition_agent")
 
         # If the portkey config is not None or empty, we initialize the llm with the portkey config
         if portkey_on:
             logger.info(f"Initializing the llm with the portkey config: {portkey_on}")
-            llm = init_portkey_llm(
-                model=llm,
+            config["llm"] = init_portkey_llm(
                 portkey_config=portkey_config,
+                model=config["llm"],
+                trace_id=trace_id,
             )
 
-        super().__init__(config=config, llm=llm, *args, **kwargs)
+            super().__init__(config=config, llm=config["llm"], *args, **kwargs)

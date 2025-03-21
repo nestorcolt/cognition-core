@@ -289,6 +289,12 @@ class ConfigReloader(FileSystemEventHandler):
 
 # Create the singleton instance
 config_manager = ConfigManager()
+crew_config = config_manager.get_config("crew")
+
+if crew_config.get("debug_routellm", False):
+    import litellm
+
+    litellm._turn_on_debug()
 
 # Export only the singleton instance
 __all__ = ["config_manager"]

@@ -7,6 +7,7 @@ import os
 def init_portkey_llm(
     model: str,
     portkey_config: Dict[str, Any] = None,
+    trace_id: str = "cognition_agent",
 ) -> LLM:
     """Initialize LLM with Portkey integration"""
 
@@ -20,7 +21,6 @@ def init_portkey_llm(
         )
 
     # Use provided config or empty dict if None
-    config = portkey_config or {}
 
     # Configure LLM with Portkey integration
     llm = LLM(
@@ -30,7 +30,8 @@ def init_portkey_llm(
         extra_headers=createHeaders(
             api_key=portkey_api_key,
             virtual_key=virtual_key,
-            config=config,
+            config=portkey_config,
+            trace_id=trace_id,
         ),
     )
 
