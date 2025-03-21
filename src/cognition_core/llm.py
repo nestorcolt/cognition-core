@@ -21,16 +21,6 @@ def init_portkey_llm(
             "PORTKEY_API_KEY and PORTKEY_VIRTUAL_KEY must be set in environment variables"
         )
 
-    # Use provided config or empty dict if None
-    portkey_config = {
-        "provider": "anthropic",  # Specify provider
-        "cache": {
-            "mode": "semantic",  # Can be "semantic" or "exact"
-        },
-        "metadata": {"environment": "development", "project": "cognition"},
-        "request_timeout": 500000,  # Seconds
-    }
-
     # Configure LLM with Portkey integration
     llm = LLM(
         model=model,
