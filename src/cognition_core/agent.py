@@ -17,10 +17,10 @@ class CognitionAgent(Agent):
 
     def __init__(self, config: dict, *args, **kwargs) -> None:
 
-        if logger.isEnabledFor(logging.INFO):
+        if logger.isEnabledFor(logging.DEBUG):
             import json
 
-            logger.info(
+            logger.debug(
                 f"Config:\n{json.dumps(config, indent=2)}\n-----------------------------------"
             )
 
