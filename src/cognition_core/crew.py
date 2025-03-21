@@ -73,8 +73,7 @@ def CognitionCoreCrewBase(cls: T) -> T:
             agent_name = config.get("name", config.get("role", "default_agent"))
 
             return CognitionAgent(
-                name=agent_name,  # Pass name from config
-                config=config,
+                name=agent_name,
                 tools=tool_instances,
                 tool_names=available_tools,
                 tool_service=self.tool_service,
