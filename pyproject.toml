@@ -19,6 +19,7 @@ classifiers = [
 ]
 dependencies = [
     "crewai[tools]",
+    "crewai",
     "portkey-ai",
     "langchain-community>=0.0.27",
     "chromadb>=0.4.0",
