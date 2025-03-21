@@ -40,4 +40,4 @@ class CognitionAgent(Agent):
                 trace_id=trace_id,
             )
 
-            super().__init__(config=config, llm=config["llm"], *args, **kwargs)
+        super().__init__(config=config, llm=config["llm"], *args, **kwargs)
