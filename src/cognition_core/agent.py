@@ -25,15 +25,17 @@ class CognitionAgent(Agent):
             )
 
         # The portkey config is optional
-        portkey_config = config.get("portkey_on", False)
+        portkey_on = config.get("portkey_on", False)
+        portkey_config = config.get("portkey_config", {})
 
         # If the portkey config is not None or empty, we initialize the llm with the portkey config
-        if portkey_config is True:
+        if portkey_on:
             logger.info(
-                f"Initializing the llm with the portkey config: {portkey_config}"
+                f"Initializing the llm with the portkey config: {portkey_on}"
             )
             config["llm"] = init_portkey_llm(
                 model=config["llm"],
+                portkey_config=portkey_config,
             )
             config.pop("portkey_on")
             config.pop("llm")
