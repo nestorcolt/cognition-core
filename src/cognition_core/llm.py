@@ -6,6 +6,7 @@ import os
 
 def init_portkey_llm(
     model: str,
+    portkey_virtual_key: str,
     portkey_config: Dict[str, Any] = None,
     trace_id: str = "cognition_agent",
 ) -> LLM:
@@ -13,7 +14,7 @@ def init_portkey_llm(
 
     # Get API keys from environment variables
     portkey_api_key = os.getenv("PORTKEY_API_KEY")
-    virtual_key = os.getenv("PORTKEY_VIRTUAL_KEY")
+    virtual_key = os.getenv(portkey_virtual_key)
 
     if not portkey_api_key or not virtual_key:
         raise ValueError(

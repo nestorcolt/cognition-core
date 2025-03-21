@@ -28,11 +28,13 @@ class CognitionAgent(Agent):
         portkey_on = config.pop("portkey_on", False)
         portkey_config = config.pop("portkey_config", {})
         trace_id = config.pop("trace_id", "cognition_agent")
+        portkey_virtual_key = config.pop("portkey_virtual_key", "N/A")
 
         # If the portkey config is not None or empty, we initialize the llm with the portkey config
         if portkey_on:
             logger.info(f"Initializing the llm with the portkey config: {portkey_on}")
             config["llm"] = init_portkey_llm(
+                portkey_virtual_key=portkey_virtual_key,
                 portkey_config=portkey_config,
                 model=config["llm"],
                 trace_id=trace_id,
