@@ -96,8 +96,6 @@ class CognitionCrew(Crew):
 
     def __init__(
         self,
-        name: str = "default_crew",
-        enabled: bool = True,
         tool_service: Optional[ToolService] = None,
         *args,
         **kwargs,
